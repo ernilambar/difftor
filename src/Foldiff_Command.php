@@ -77,8 +77,6 @@ class Foldiff_Command {
 
 		$porcelain = isset( $assoc_args['porcelain'] );
 
-		WP_CLI::log( 'Downloading and extracting zip files...' );
-
 		// Download and extract first zip.
 		$dir1 = $this->download_and_extract_zip( $url1 );
 		if ( false === $dir1 ) {
@@ -91,8 +89,6 @@ class Foldiff_Command {
 			$this->cleanup_temp_directory( $dir1 );
 			WP_CLI::error( 'Failed to download and extract second zip file.' );
 		}
-
-		WP_CLI::log( 'Generating diff...' );
 
 		// Get temp directory for HTML file.
 		$temp_base   = sys_get_temp_dir();
