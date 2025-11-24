@@ -17,6 +17,7 @@
   },
   "require": {
     "php": ">=7.4",
+    "jfcherng/php-diff": "^6",
     "wp-cli/wp-cli": "^2"
   },
   "require-dev": {
