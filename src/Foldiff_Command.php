@@ -33,6 +33,9 @@ class Foldiff_Command {
 	 * <paths>
 	 * : Two URLs separated by pipe (|). Each URL should point to a zip file.
 	 *
+	 * [--porcelain]
+	 * : Output a single value.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     $ wp foldiff view "https://example.com/file1.zip|https://example.com/file2.zip"
@@ -72,6 +75,8 @@ class Foldiff_Command {
 			WP_CLI::error( 'Second URL is not valid: ' . $url2 );
 		}
 
+		$porcelain = isset( $assoc_args['porcelain'] );
+
 		WP_CLI::log( 'Downloading and extracting zip files...' );
 
 		// Download and extract first zip.
@@ -103,7 +108,11 @@ class Foldiff_Command {
 		$this->cleanup_temp_directory( $dir1 );
 		$this->cleanup_temp_directory( $dir2 );
 
-		WP_CLI::success( 'Diff HTML file generated: ' . $html_file );
+		if ( $porcelain ) {
+			WP_CLI::line( $html_file );
+		} else {
+			WP_CLI::success( 'Diff HTML file generated: ' . $html_file );
+		}
 	}
 
 	/**
