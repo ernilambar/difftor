@@ -31,7 +31,7 @@ class Foldiff_Command {
 	 * ## OPTIONS
 	 *
 	 * <paths>
-	 * : Two URLs separated by pipe (|). Each URL should point to a zip file.
+	 * : Two URLs separated by pipe (|). First URL is the old/original zip file, second URL is the new/modified zip file. Each URL should point to a zip file.
 	 *
 	 * [--porcelain]
 	 * : Output a single value.
