@@ -245,7 +245,9 @@ class Foldiff_Command {
 		$all_files = array_unique( array_merge( array_keys( $files1 ), array_keys( $files2 ) ) );
 		sort( $all_files );
 
-		$html_parts = [];
+		$added_files   = [];
+		$removed_files = [];
+		$html_parts    = [];
 
 		foreach ( $all_files as $relative_path ) {
 			$file_path1 = $files1[ $relative_path ] ?? null;
@@ -267,21 +269,42 @@ class Foldiff_Command {
 				$html_parts[] = '</div>';
 			} elseif ( $file_path1 ) {
 				// File only exists in first directory.
-				$html_parts[] = '<div class="file-diff">';
-				$html_parts[] = '<h2 class="file-name">' . htmlspecialchars( $relative_path, ENT_QUOTES, 'UTF-8' ) . '</h2>';
-				$html_parts[] = '<div class="file-status removed">File only exists in first directory (removed).</div>';
-				$html_parts[] = '</div>';
+				$removed_files[] = $relative_path;
 			} else {
 				// File only exists in second directory.
-				$html_parts[] = '<div class="file-diff">';
-				$html_parts[] = '<h2 class="file-name">' . htmlspecialchars( $relative_path, ENT_QUOTES, 'UTF-8' ) . '</h2>';
-				$html_parts[] = '<div class="file-status added">File only exists in second directory (added).</div>';
-				$html_parts[] = '</div>';
+				$added_files[] = $relative_path;
 			}
 		}
 
+		// Build summary section for added/removed files.
+		$summary_parts = [];
+		if ( ! empty( $added_files ) || ! empty( $removed_files ) ) {
+			$summary_parts[] = '<div class="file-summary">';
+			if ( ! empty( $removed_files ) ) {
+				$summary_parts[] = '<div class="summary-section">';
+				$summary_parts[] = '<h3 class="summary-title removed">Removed Files (' . count( $removed_files ) . ')</h3>';
+				$summary_parts[] = '<ul class="file-list removed">';
+				foreach ( $removed_files as $file ) {
+					$summary_parts[] = '<li>' . htmlspecialchars( $file, ENT_QUOTES, 'UTF-8' ) . '</li>';
+				}
+				$summary_parts[] = '</ul>';
+				$summary_parts[] = '</div>';
+			}
+			if ( ! empty( $added_files ) ) {
+				$summary_parts[] = '<div class="summary-section">';
+				$summary_parts[] = '<h3 class="summary-title added">Added Files (' . count( $added_files ) . ')</h3>';
+				$summary_parts[] = '<ul class="file-list added">';
+				foreach ( $added_files as $file ) {
+					$summary_parts[] = '<li>' . htmlspecialchars( $file, ENT_QUOTES, 'UTF-8' ) . '</li>';
+				}
+				$summary_parts[] = '</ul>';
+				$summary_parts[] = '</div>';
+			}
+			$summary_parts[] = '</div>';
+		}
+
 		// Generate complete HTML document.
-		$html_content = $this->build_html_document( $html_parts );
+		$html_content = $this->build_html_document( $summary_parts, $html_parts );
 
 		// Save HTML file.
 		$html_filename = 'foldiff-' . date( 'Y-m-d-His' ) . '-' . uniqid() . '.html';
@@ -296,10 +319,11 @@ class Foldiff_Command {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param array $summary_parts Array of summary HTML content parts.
 	 * @param array $html_parts Array of HTML content parts.
 	 * @return string Complete HTML document.
 	 */
-	private function build_html_document( $html_parts ) {
+	private function build_html_document( $summary_parts, $html_parts ) {
 		// Get default CSS from php-diff package.
 		$diff_css = DiffHelper::getStyleSheet();
 
@@ -328,6 +352,46 @@ class Foldiff_Command {
 			color: #333;
 			border-bottom: 2px solid #ddd;
 			padding-bottom: 10px;
+		}
+		.file-summary {
+			margin-bottom: 40px;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			overflow: hidden;
+			background-color: #f8f9fa;
+		}
+		.summary-section {
+			padding: 15px;
+		}
+		.summary-section:not(:last-child) {
+			border-bottom: 1px solid #ddd;
+		}
+		.summary-title {
+			margin: 0 0 10px 0;
+			font-size: 16px;
+			font-weight: 600;
+		}
+		.summary-title.added {
+			color: #155724;
+		}
+		.summary-title.removed {
+			color: #721c24;
+		}
+		.file-list {
+			margin: 0;
+			padding-left: 20px;
+			list-style-type: disc;
+		}
+		.file-list li {
+			margin: 5px 0;
+			font-family: "Courier New", Courier, monospace;
+			font-size: 13px;
+		}
+		.file-list.added li {
+			color: #155724;
+		}
+		.file-list.removed li {
+			color: #721c24;
 		}
 		.file-diff {
 			margin-bottom: 40px;
@@ -361,6 +425,7 @@ class Foldiff_Command {
 <body>
 	<div class="container">
 		<h1>Folder Diff Comparison</h1>
+		' . implode( "\n", $summary_parts ) . '
 		' . implode( "\n", $html_parts ) . '
 	</div>
 </body>
