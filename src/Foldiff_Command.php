@@ -347,6 +347,95 @@ class Foldiff_Command {
 			}
 		}
 
+		// Detect folder renames by checking if only first-level folder name differs.
+		$renamed_diffs = [];
+		$matched_removed = [];
+		$matched_added = [];
+
+		foreach ( $removed_files as $removed_path ) {
+			// Normalize path separators.
+			$removed_path_normalized = str_replace( '\\', '/', $removed_path );
+
+			// Get path after first directory component.
+			$path_parts = explode( '/', $removed_path_normalized );
+			if ( count( $path_parts ) < 2 ) {
+				continue; // File is in root, not in a folder.
+			}
+
+			// Remove first component (folder name).
+			$path_after_first = implode( '/', array_slice( $path_parts, 1 ) );
+
+			// Check if any added file has the same path after first component.
+			foreach ( $added_files as $added_path ) {
+				if ( in_array( $added_path, $matched_added, true ) ) {
+					continue; // Already matched.
+				}
+
+				// Normalize path separators.
+				$added_path_normalized = str_replace( '\\', '/', $added_path );
+
+				$added_parts = explode( '/', $added_path_normalized );
+				if ( count( $added_parts ) < 2 ) {
+					continue; // File is in root, not in a folder.
+				}
+
+				$added_path_after_first = implode( '/', array_slice( $added_parts, 1 ) );
+
+				// If paths after first component match, it's likely a folder rename.
+				if ( $path_after_first === $added_path_after_first ) {
+					$file1 = $files1[ $removed_path ];
+					$file2 = $files2[ $added_path ];
+
+					// Check if file should be ignored from diff.
+					$should_ignore = false;
+					if ( $this->should_ignore_file( $file1 ) || $this->should_ignore_file( $file2 ) ) {
+						$should_ignore = true;
+					}
+
+					if ( ! $should_ignore ) {
+						// Compare content.
+						$content1 = file_get_contents( $file1 );
+						$content2 = file_get_contents( $file2 );
+
+						if ( $content1 !== $content2 ) {
+							// File was renamed and has content differences.
+							$diff_html = DiffHelper::calculate( $content1, $content2, 'Inline' );
+							$renamed_diffs[] = [
+								'old_path'  => $removed_path,
+								'new_path'  => $added_path,
+								'diff_html' => $diff_html,
+							];
+						}
+					}
+
+					// Mark as matched.
+					$matched_removed[] = $removed_path;
+					$matched_added[]   = $added_path;
+					break; // Found match, move to next removed file.
+				}
+			}
+		}
+
+		// Remove matched files from added/removed lists.
+		$removed_files = array_diff( $removed_files, $matched_removed );
+		$added_files   = array_diff( $added_files, $matched_added );
+		$removed_files = array_values( $removed_files );
+		$added_files   = array_values( $added_files );
+
+		// Add renamed file diffs to HTML parts.
+		foreach ( $renamed_diffs as $renamed_diff ) {
+			$html_parts[] = '<div class="file-diff renamed-file">';
+			$html_parts[] = '<h2 class="file-name">';
+			$html_parts[] = '<span class="file-rename-info">';
+			$html_parts[] = '<span class="rename-old">' . htmlspecialchars( $renamed_diff['old_path'], ENT_QUOTES, 'UTF-8' ) . '</span>';
+			$html_parts[] = ' → ';
+			$html_parts[] = '<span class="rename-new">' . htmlspecialchars( $renamed_diff['new_path'], ENT_QUOTES, 'UTF-8' ) . '</span>';
+			$html_parts[] = '</span>';
+			$html_parts[] = '</h2>';
+			$html_parts[] = $renamed_diff['diff_html'];
+			$html_parts[] = '</div>';
+		}
+
 		// Build summary section for added/removed files.
 		$summary_parts = [];
 		if ( ! empty( $added_files ) || ! empty( $removed_files ) ) {
@@ -489,6 +578,22 @@ class Foldiff_Command {
 		.file-status.removed {
 			background-color: #f8d7da;
 			color: #721c24;
+		}
+		.file-diff.renamed-file {
+			border-left: 4px solid #856404;
+		}
+		.file-rename-info {
+			display: block;
+			font-size: 14px;
+			margin-top: 5px;
+		}
+		.rename-old {
+			color: #721c24;
+			text-decoration: line-through;
+		}
+		.rename-new {
+			color: #155724;
+			font-weight: 600;
 		}
 		' . $diff_css . '
 	</style>
