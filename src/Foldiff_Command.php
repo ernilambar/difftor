@@ -8,10 +8,11 @@
 namespace Nilambar\Foldiff_Command;
 
 use Jfcherng\Diff\DiffHelper;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
+use Nilambar\Foldiff_Command\Utils\File_Utils;
+use Nilambar\Foldiff_Command\Utils\HTML_Utils;
+use Nilambar\Foldiff_Command\Utils\Path_Utils;
+use Nilambar\Foldiff_Command\Utils\Zip_Utils;
 use WP_CLI;
-use ZipArchive;
 
 /**
  * Foldiff_Command Class.
@@ -65,27 +66,43 @@ class Foldiff_Command {
 	];
 
 	/**
-	 * Compares two zip files from URLs and generates an HTML diff file.
+	 * Compares two sources (URLs, local directories, or zip files) and generates an HTML diff file.
 	 *
-	 * Downloads two zip files from the provided URLs, extracts them to temporary
-	 * directories, and generates an HTML diff file showing the differences between
-	 * the contents of the two zip files. The HTML file is saved in the WP-CLI cache
+	 * Supports comparing:
+	 * - Two URLs pointing to zip files
+	 * - Two local directories
+	 * - Two local zip files
+	 * - Mixed combinations (e.g., URL and local directory)
+	 *
+	 * The sources are extracted/prepared to temporary directories (if needed) and an HTML diff
+	 * file is generated showing the differences. The HTML file is saved in the WP-CLI cache
 	 * directory and can be viewed in a browser.
 	 *
 	 * ## OPTIONS
 	 *
 	 * <paths>
-	 * : Two URLs separated by pipe (|). First URL is the old/original zip file, second URL is the new/modified zip file. Each URL should point to a zip file.
+	 * : Two paths separated by pipe (|). Each path can be:
+	 *   - A URL pointing to a zip file
+	 *   - A local directory path
+	 *   - A local zip file path
+	 *   First path is the old/original source, second path is the new/modified source.
 	 *
 	 * [--porcelain]
 	 * : Output a single value.
 	 *
 	 * ## EXAMPLES
 	 *
+	 *     # Compare two URLs (zip files)
 	 *     $ wp foldiff view "https://example.com/file1.zip|https://example.com/file2.zip"
-	 *     Downloading and extracting zip files...
-	 *     Generating diff...
-	 *     Success: Diff HTML file generated: /path/to/cache/foldiff-2024-01-15-123456-abc123.html
+	 *
+	 *     # Compare two local directories
+	 *     $ wp foldiff view "/path/to/old-folder|/path/to/new-folder"
+	 *
+	 *     # Compare two local zip files
+	 *     $ wp foldiff view "/path/to/old.zip|/path/to/new.zip"
+	 *
+	 *     # Mixed: URL and local directory
+	 *     $ wp foldiff view "https://example.com/old.zip|/path/to/new-folder"
 	 *
 	 * @since 1.0.0
 	 *
@@ -98,41 +115,40 @@ class Foldiff_Command {
 
 		// Validate paths format.
 		if ( false === strpos( $paths, '|' ) ) {
-			WP_CLI::error( 'Paths must contain two URLs separated by pipe (|).' );
+			WP_CLI::error( 'Paths must contain two sources separated by pipe (|). Each source can be a URL, local directory, or zip file.' );
 		}
 
-		$urls = explode( '|', $paths );
+		$path_array = explode( '|', $paths );
 
-		if ( 2 !== count( $urls ) ) {
-			WP_CLI::error( 'Paths must contain exactly two URLs separated by pipe (|).' );
+		if ( 2 !== count( $path_array ) ) {
+			WP_CLI::error( 'Paths must contain exactly two sources separated by pipe (|).' );
 		}
 
-		$url1 = trim( $urls[0] );
-		$url2 = trim( $urls[1] );
-
-		// Validate URLs.
-		if ( false === filter_var( $url1, FILTER_VALIDATE_URL ) ) {
-			WP_CLI::error( 'First URL is not valid: ' . $url1 );
-		}
-
-		if ( false === filter_var( $url2, FILTER_VALIDATE_URL ) ) {
-			WP_CLI::error( 'Second URL is not valid: ' . $url2 );
-		}
+		$path1 = Path_Utils::normalize_path( trim( $path_array[0] ) );
+		$path2 = Path_Utils::normalize_path( trim( $path_array[1] ) );
 
 		$porcelain = isset( $assoc_args['porcelain'] );
 
-		// Download and extract first zip.
-		$dir1 = $this->download_and_extract_zip( $url1 );
-		if ( false === $dir1 ) {
-			WP_CLI::error( 'Failed to download and extract first zip file.' );
+		// Prepare first source (download/extract if needed).
+		$result1 = $this->prepare_source( $path1 );
+		if ( false === $result1 ) {
+			WP_CLI::error( 'Failed to prepare first source: ' . $path1 );
 		}
 
-		// Download and extract second zip.
-		$dir2 = $this->download_and_extract_zip( $url2 );
-		if ( false === $dir2 ) {
-			$this->cleanup_temp_directory( $dir1 );
-			WP_CLI::error( 'Failed to download and extract second zip file.' );
+		$dir1        = $result1['directory'];
+		$is_temp_dir = $result1['is_temp'];
+
+		// Prepare second source (download/extract if needed).
+		$result2 = $this->prepare_source( $path2 );
+		if ( false === $result2 ) {
+			if ( $is_temp_dir ) {
+				File_Utils::cleanup_temp_directory( $dir1 );
+			}
+			WP_CLI::error( 'Failed to prepare second source: ' . $path2 );
 		}
+
+		$dir2         = $result2['directory'];
+		$is_temp_dir2 = $result2['is_temp'];
 
 		// Get temp directory for HTML file.
 		$temp_base   = sys_get_temp_dir();
@@ -144,9 +160,13 @@ class Foldiff_Command {
 		// Generate HTML diff file.
 		$html_file = $this->generate_diff_html( $dir1, $dir2, $foldiff_dir );
 
-		// Cleanup.
-		$this->cleanup_temp_directory( $dir1 );
-		$this->cleanup_temp_directory( $dir2 );
+		// Cleanup temporary directories (only if we created them).
+		if ( $is_temp_dir ) {
+			File_Utils::cleanup_temp_directory( $dir1 );
+		}
+		if ( $is_temp_dir2 ) {
+			File_Utils::cleanup_temp_directory( $dir2 );
+		}
 
 		if ( $porcelain ) {
 			WP_CLI::line( $html_file );
@@ -155,135 +175,54 @@ class Foldiff_Command {
 		}
 	}
 
+
 	/**
-	 * Download and extract zip file from URL.
+	 * Prepare source (URL, directory, or zip file) for diff comparison.
+	 *
+	 * Handles three types of sources:
+	 * - URLs: Downloads and extracts zip file to temp directory
+	 * - Local directories: Returns directory path directly
+	 * - Local zip files: Extracts to temp directory
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $url URL to zip file.
-	 * @return string|false Temporary directory path or false on error.
+	 * @param string $path Path to source (URL, directory, or zip file).
+	 * @return array|false Array with 'directory' and 'is_temp' keys, or false on error.
 	 */
-	private function download_and_extract_zip( $url ) {
-		// Create temporary file for zip.
-		$temp_zip = tempnam( sys_get_temp_dir(), 'foldiff_zip_' );
-		if ( false === $temp_zip ) {
-			WP_CLI::warning( 'Failed to create temporary file.' );
-			return false;
-		}
-
-		// Download zip file using cURL for better error handling.
-		$ch = curl_init( $url );
-		if ( false === $ch ) {
-			unlink( $temp_zip );
-			WP_CLI::warning( 'Failed to initialize cURL for: ' . $url );
-			return false;
-		}
-
-		$fp = fopen( $temp_zip, 'wb' );
-		if ( false === $fp ) {
-			curl_close( $ch );
-			unlink( $temp_zip );
-			WP_CLI::warning( 'Failed to open temporary file for writing.' );
-			return false;
-		}
-
-		curl_setopt_array(
-			$ch,
-			[
-				CURLOPT_FILE           => $fp,
-				CURLOPT_FOLLOWLOCATION => true,
-				CURLOPT_TIMEOUT        => 300,
-				CURLOPT_CONNECTTIMEOUT => 30,
-				CURLOPT_USERAGENT      => 'WP-CLI Foldiff Command',
-			]
-		);
-
-		$success    = curl_exec( $ch );
-		$http_code  = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		$curl_error = curl_error( $ch );
-		curl_close( $ch );
-		fclose( $fp );
-
-		if ( false === $success || ! empty( $curl_error ) ) {
-			unlink( $temp_zip );
-			WP_CLI::warning( 'Failed to download zip file from: ' . $url . ' - ' . $curl_error );
-			return false;
-		}
-
-		if ( 200 !== $http_code ) {
-			unlink( $temp_zip );
-			WP_CLI::warning( 'Failed to download zip file from: ' . $url . ' - HTTP ' . $http_code );
-			return false;
-		}
-
-		// Check if file is empty.
-		if ( 0 === filesize( $temp_zip ) ) {
-			unlink( $temp_zip );
-			WP_CLI::warning( 'Downloaded zip file is empty from: ' . $url );
-			return false;
-		}
-
-		// Create temporary directory for extraction.
-		$temp_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'foldiff_' . uniqid( '', true );
-		if ( ! mkdir( $temp_dir, 0755, true ) ) {
-			unlink( $temp_zip );
-			WP_CLI::warning( 'Failed to create temporary directory.' );
-			return false;
-		}
-
-		// Extract zip file.
-		$zip    = new ZipArchive();
-		$result = $zip->open( $temp_zip );
-		if ( true !== $result ) {
-			unlink( $temp_zip );
-			rmdir( $temp_dir );
-			WP_CLI::warning( 'Failed to open zip file from: ' . $url );
-			return false;
-		}
-
-		// Extract files, skipping __MACOSX folder and macOS metadata files.
-		for ( $i = 0; $i < $zip->numFiles; $i++ ) {
-			$entry_name = $zip->getNameIndex( $i );
-			if ( false === $entry_name ) {
-				continue;
+	private function prepare_source( $path ) {
+		if ( Path_Utils::is_url( $path ) ) {
+			// Handle URL - download and extract zip.
+			$dir = Zip_Utils::download_and_extract_zip( $path );
+			if ( false === $dir ) {
+				return false;
 			}
-
-			// Skip __MACOSX folder and its contents.
-			if ( '__MACOSX/' === $entry_name || 0 === strpos( $entry_name, '__MACOSX/' ) ) {
-				continue;
+			return [
+				'directory' => $dir,
+				'is_temp'   => true,
+			];
+		} elseif ( Path_Utils::is_local_directory( $path ) ) {
+			// Handle local directory - use directly.
+			return [
+				'directory' => $path,
+				'is_temp'   => false,
+			];
+		} elseif ( Path_Utils::is_local_zip( $path ) ) {
+			// Handle local zip file - extract to temp directory.
+			$dir = Zip_Utils::extract_local_zip( $path );
+			if ( false === $dir ) {
+				return false;
 			}
-
-			// Skip macOS resource fork files (._*).
-			$basename = basename( $entry_name );
-			if ( '._' === substr( $basename, 0, 2 ) ) {
-				continue;
-			}
-
-			// Extract the entry (file or directory).
-			// extractTo will create directory structure automatically.
-			$zip->extractTo( $temp_dir, [ $entry_name ] );
+			return [
+				'directory' => $dir,
+				'is_temp'   => true,
+			];
+		} else {
+			WP_CLI::warning( 'Invalid path: ' . $path . ' (must be URL, directory, or zip file)' );
+			return false;
 		}
-
-		$zip->close();
-
-		// Clean up temporary zip file.
-		unlink( $temp_zip );
-
-		return $temp_dir;
 	}
 
-	/**
-	 * Check if file should be ignored from diff.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $file_path File path.
-	 * @return bool True if file should be ignored, false otherwise.
-	 */
-	private function should_ignore_file( $file_path ) {
-		$extension = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
-		return in_array( $extension, $this->ignored_extensions, true );
-	}
+
 
 	/**
 	 * Generate HTML diff file between two directories.
@@ -296,8 +235,8 @@ class Foldiff_Command {
 	 * @return string HTML file path.
 	 */
 	private function generate_diff_html( $dir1, $dir2, $cache_dir ) {
-		$files1 = $this->get_directory_files( $dir1 );
-		$files2 = $this->get_directory_files( $dir2 );
+		$files1 = File_Utils::get_directory_files( $dir1 );
+		$files2 = File_Utils::get_directory_files( $dir2 );
 
 		$all_files = array_unique( array_merge( array_keys( $files1 ), array_keys( $files2 ) ) );
 		sort( $all_files );
@@ -313,9 +252,9 @@ class Foldiff_Command {
 
 			// Check if file should be ignored from diff.
 			$should_ignore = false;
-			if ( $file_path1 && $this->should_ignore_file( $file_path1 ) ) {
+			if ( $file_path1 && File_Utils::should_ignore_file( $file_path1, $this->ignored_extensions ) ) {
 				$should_ignore = true;
-			} elseif ( $file_path2 && $this->should_ignore_file( $file_path2 ) ) {
+			} elseif ( $file_path2 && File_Utils::should_ignore_file( $file_path2, $this->ignored_extensions ) ) {
 				$should_ignore = true;
 			}
 
@@ -335,7 +274,7 @@ class Foldiff_Command {
 				}
 
 				$diff_html    = DiffHelper::calculate( $content1, $content2, 'Inline' );
-				$file_id      = $this->generate_file_id( $relative_path );
+				$file_id      = HTML_Utils::generate_file_id( $relative_path );
 				$diff_files[] = [
 					'path' => $relative_path,
 					'id'   => $file_id,
@@ -394,7 +333,7 @@ class Foldiff_Command {
 
 					// Check if file should be ignored from diff.
 					$should_ignore = false;
-					if ( $this->should_ignore_file( $file1 ) || $this->should_ignore_file( $file2 ) ) {
+					if ( File_Utils::should_ignore_file( $file1, $this->ignored_extensions ) || File_Utils::should_ignore_file( $file2, $this->ignored_extensions ) ) {
 						$should_ignore = true;
 					}
 
@@ -430,7 +369,7 @@ class Foldiff_Command {
 
 		// Add renamed file diffs to HTML parts.
 		foreach ( $renamed_diffs as $renamed_diff ) {
-			$file_id      = $this->generate_file_id( $renamed_diff['new_path'] );
+			$file_id      = HTML_Utils::generate_file_id( $renamed_diff['new_path'] );
 			$diff_files[] = [
 				'path' => $renamed_diff['old_path'] . ' → ' . $renamed_diff['new_path'],
 				'id'   => $file_id,
@@ -457,7 +396,7 @@ class Foldiff_Command {
 				$summary_parts[] = '<ul class="file-list removed">';
 				foreach ( $removed_files as $file ) {
 					// Check if this file has a corresponding diff.
-					$file_id = $this->find_diff_id_for_file( $file, $diff_files );
+					$file_id = HTML_Utils::find_diff_id_for_file( $file, $diff_files );
 					if ( $file_id ) {
 						$summary_parts[] = '<li><a href="#' . htmlspecialchars( $file_id, ENT_QUOTES, 'UTF-8' ) . '">' . htmlspecialchars( $file, ENT_QUOTES, 'UTF-8' ) . '</a></li>';
 					} else {
@@ -473,7 +412,7 @@ class Foldiff_Command {
 				$summary_parts[] = '<ul class="file-list added">';
 				foreach ( $added_files as $file ) {
 					// Check if this file has a corresponding diff.
-					$file_id = $this->find_diff_id_for_file( $file, $diff_files );
+					$file_id = HTML_Utils::find_diff_id_for_file( $file, $diff_files );
 					if ( $file_id ) {
 						$summary_parts[] = '<li><a href="#' . htmlspecialchars( $file_id, ENT_QUOTES, 'UTF-8' ) . '">' . htmlspecialchars( $file, ENT_QUOTES, 'UTF-8' ) . '</a></li>';
 					} else {
@@ -487,7 +426,7 @@ class Foldiff_Command {
 		}
 
 		// Generate complete HTML document.
-		$html_content = $this->build_html_document( $summary_parts, $html_parts, $diff_files );
+		$html_content = HTML_Utils::build_html_document( $summary_parts, $html_parts, $diff_files );
 
 		// Save HTML file.
 		$html_filename = 'foldiff-' . date( 'Y-m-d-His' ) . '-' . uniqid() . '.html';
@@ -495,313 +434,5 @@ class Foldiff_Command {
 		file_put_contents( $html_file, $html_content );
 
 		return $html_file;
-	}
-
-	/**
-	 * Build complete HTML document with styles.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param array $summary_parts Array of summary HTML content parts.
-	 * @param array $html_parts Array of HTML content parts.
-	 * @param array $diff_files Array of files with diffs for table of contents.
-	 * @return string Complete HTML document.
-	 */
-	private function build_html_document( $summary_parts, $html_parts, $diff_files = [] ) {
-		// Get default CSS from php-diff package.
-		$diff_css = DiffHelper::getStyleSheet();
-
-		$html = '<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Folder Diff</title>
-	<style>
-		body {
-			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-			margin: 0;
-			padding: 20px;
-			background-color: #f5f5f5;
-		}
-		.container {
-			max-width: 1400px;
-			margin: 0 auto;
-			background-color: #fff;
-			padding: 20px;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-		}
-		h1 {
-			margin-top: 0;
-			color: #333;
-			border-bottom: 2px solid #ddd;
-			padding-bottom: 10px;
-		}
-		.file-summary {
-			margin-bottom: 40px;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-			overflow: hidden;
-			background-color: #f8f9fa;
-		}
-		.summary-section {
-			padding: 15px;
-		}
-		.summary-section:not(:last-child) {
-			border-bottom: 1px solid #ddd;
-		}
-		.summary-title {
-			margin: 0 0 10px 0;
-			font-size: 16px;
-			font-weight: 600;
-		}
-		.summary-title.added {
-			color: #155724;
-		}
-		.summary-title.removed {
-			color: #721c24;
-		}
-		.file-list {
-			margin: 0;
-			padding-left: 20px;
-			list-style-type: disc;
-		}
-		.file-list li {
-			margin: 5px 0;
-			font-family: "Courier New", Courier, monospace;
-			font-size: 13px;
-		}
-		.file-list.added li {
-			color: #155724;
-		}
-		.file-list.removed li {
-			color: #721c24;
-		}
-		.file-diff {
-			margin-bottom: 40px;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-			overflow: hidden;
-		}
-		.file-name {
-			background-color: #f8f9fa;
-			padding: 10px 15px;
-			margin: 0;
-			font-size: 16px;
-			border-bottom: 1px solid #ddd;
-			color: #495057;
-		}
-		.file-status {
-			padding: 15px;
-			font-weight: bold;
-		}
-		.file-status.added {
-			background-color: #d4edda;
-			color: #155724;
-		}
-		.file-status.removed {
-			background-color: #f8d7da;
-			color: #721c24;
-		}
-		.file-diff.renamed-file {
-			border-left: 4px solid #856404;
-		}
-		.file-rename-info {
-			display: block;
-			font-size: 14px;
-			margin-top: 5px;
-		}
-		.rename-old {
-			color: #721c24;
-			text-decoration: line-through;
-		}
-		.rename-new {
-			color: #155724;
-			font-weight: 600;
-		}
-		.table-of-contents {
-			margin-bottom: 40px;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-			padding: 15px;
-			background-color: #f8f9fa;
-		}
-		.table-of-contents h2 {
-			margin: 0 0 15px 0;
-			font-size: 18px;
-			color: #333;
-		}
-		.table-of-contents ul {
-			margin: 0;
-			padding-left: 20px;
-			list-style-type: disc;
-		}
-		.table-of-contents li {
-			margin: 5px 0;
-			font-family: "Courier New", Courier, monospace;
-			font-size: 13px;
-		}
-		.table-of-contents a {
-			color: #0073aa;
-			text-decoration: none;
-		}
-		.table-of-contents a:hover {
-			text-decoration: underline;
-		}
-		.file-list a {
-			color: inherit;
-			text-decoration: none;
-		}
-		.file-list a:hover {
-			text-decoration: underline;
-		}
-		.file-diff {
-			scroll-margin-top: 20px;
-		}
-		' . $diff_css . '
-	</style>
-</head>
-<body>
-	<div class="container">
-		<h1>Folder Diff Comparison</h1>
-		' . implode( "\n", $summary_parts ) . '
-		' . $this->generate_table_of_contents( $diff_files ) . '
-		' . implode( "\n", $html_parts ) . '
-	</div>
-</body>
-</html>';
-
-		return $html;
-	}
-
-	/**
-	 * Get all files in directory recursively.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $dir Directory path.
-	 * @return array Array of relative paths => absolute paths.
-	 */
-	private function get_directory_files( $dir ) {
-		$files = [];
-
-		if ( ! is_dir( $dir ) ) {
-			return $files;
-		}
-
-		$iterator = new RecursiveIteratorIterator(
-			new RecursiveDirectoryIterator( $dir, RecursiveDirectoryIterator::SKIP_DOTS ),
-			RecursiveIteratorIterator::SELF_FIRST
-		);
-
-		foreach ( $iterator as $file ) {
-			if ( $file->isFile() ) {
-				$absolute_path = $file->getPathname();
-				$relative_path = str_replace( $dir . DIRECTORY_SEPARATOR, '', $absolute_path );
-
-				// Skip __MACOSX folder and its contents.
-				if ( '__MACOSX' === $relative_path || 0 === strpos( $relative_path, '__MACOSX' . DIRECTORY_SEPARATOR ) ) {
-					continue;
-				}
-
-				// Skip macOS resource fork files (._*).
-				$basename = basename( $relative_path );
-				if ( '._' === substr( $basename, 0, 2 ) ) {
-					continue;
-				}
-
-				$files[ $relative_path ] = $absolute_path;
-			}
-		}
-
-		return $files;
-	}
-
-	/**
-	 * Cleanup temporary directory.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $dir Directory path.
-	 */
-	private function cleanup_temp_directory( $dir ) {
-		if ( ! is_dir( $dir ) ) {
-			return;
-		}
-
-		$iterator = new RecursiveIteratorIterator(
-			new RecursiveDirectoryIterator( $dir, RecursiveDirectoryIterator::SKIP_DOTS ),
-			RecursiveIteratorIterator::CHILD_FIRST
-		);
-
-		foreach ( $iterator as $file ) {
-			if ( $file->isDir() ) {
-				rmdir( $file->getPathname() );
-			} else {
-				unlink( $file->getPathname() );
-			}
-		}
-
-		rmdir( $dir );
-	}
-
-	/**
-	 * Generate unique ID for file path.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $file_path File path.
-	 * @return string Unique ID.
-	 */
-	private function generate_file_id( $file_path ) {
-		// Normalize path separators and create a safe ID.
-		$normalized = str_replace( [ '\\', '/', ' ', ':', '.', '-', '→' ], '_', $file_path );
-		$normalized = preg_replace( '/[^a-zA-Z0-9_]/', '', $normalized );
-		return 'file_' . md5( $file_path ) . '_' . $normalized;
-	}
-
-	/**
-	 * Find diff ID for a file path.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $file_path File path to search for.
-	 * @param array  $diff_files Array of diff files with 'path' and 'id' keys.
-	 * @return string|false Diff ID if found, false otherwise.
-	 */
-	private function find_diff_id_for_file( $file_path, $diff_files ) {
-		foreach ( $diff_files as $diff_file ) {
-			// Check if path matches exactly or is part of a rename path.
-			if ( $file_path === $diff_file['path'] || false !== strpos( $diff_file['path'], $file_path ) ) {
-				return $diff_file['id'];
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Generate table of contents HTML.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param array $diff_files Array of files with diffs.
-	 * @return string Table of contents HTML.
-	 */
-	private function generate_table_of_contents( $diff_files ) {
-		if ( empty( $diff_files ) ) {
-			return '';
-		}
-
-		$toc_parts   = [];
-		$toc_parts[] = '<div class="table-of-contents">';
-		$toc_parts[] = '<h2>Table of Contents</h2>';
-		$toc_parts[] = '<ul>';
-		foreach ( $diff_files as $diff_file ) {
-			$toc_parts[] = '<li><a href="#' . htmlspecialchars( $diff_file['id'], ENT_QUOTES, 'UTF-8' ) . '">' . htmlspecialchars( $diff_file['path'], ENT_QUOTES, 'UTF-8' ) . '</a></li>';
-		}
-		$toc_parts[] = '</ul>';
-		$toc_parts[] = '</div>';
-
-		return implode( "\n", $toc_parts );
 	}
 }

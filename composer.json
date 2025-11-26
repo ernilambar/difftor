@@ -51,7 +51,7 @@
   },
   "extra": {
     "commands": [
-      "manify"
+      "foldiff view"
     ],
     "readme": {
       "sections": [
