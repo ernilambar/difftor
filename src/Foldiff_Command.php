@@ -21,6 +21,50 @@ use ZipArchive;
 class Foldiff_Command {
 
 	/**
+	 * List of file extensions to ignore from diff (binary files).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var array
+	 */
+	private $ignored_extensions = [
+		'7z',
+		'ai',
+		'avi',
+		'bmp',
+		'doc',
+		'docx',
+		'eot',
+		'flv',
+		'gif',
+		'gz',
+		'ico',
+		'jpeg',
+		'jpg',
+		'mov',
+		'mp3',
+		'mp4',
+		'otf',
+		'pdf',
+		'png',
+		'ppt',
+		'pptx',
+		'psd',
+		'rar',
+		'sketch',
+		'svg',
+		'tar',
+		'ttf',
+		'webp',
+		'wmv',
+		'woff',
+		'woff2',
+		'xls',
+		'xlsx',
+		'zip',
+	];
+
+	/**
 	 * Compares two zip files from URLs and generates an HTML diff file.
 	 *
 	 * Downloads two zip files from the provided URLs, extracts them to temporary
@@ -229,6 +273,19 @@ class Foldiff_Command {
 	}
 
 	/**
+	 * Check if file should be ignored from diff.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $file_path File path.
+	 * @return bool True if file should be ignored, false otherwise.
+	 */
+	private function should_ignore_file( $file_path ) {
+		$extension = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+		return in_array( $extension, $this->ignored_extensions, true );
+	}
+
+	/**
 	 * Generate HTML diff file between two directories.
 	 *
 	 * @since 1.0.0
@@ -253,8 +310,22 @@ class Foldiff_Command {
 			$file_path1 = $files1[ $relative_path ] ?? null;
 			$file_path2 = $files2[ $relative_path ] ?? null;
 
+			// Check if file should be ignored from diff.
+			$should_ignore = false;
+			if ( $file_path1 && $this->should_ignore_file( $file_path1 ) ) {
+				$should_ignore = true;
+			} elseif ( $file_path2 && $this->should_ignore_file( $file_path2 ) ) {
+				$should_ignore = true;
+			}
+
 			if ( $file_path1 && $file_path2 ) {
-				// Both files exist, compare them.
+				// Both files exist.
+				if ( $should_ignore ) {
+					// Skip binary files from diff - we can't meaningfully diff them.
+					continue;
+				}
+
+				// Compare text files.
 				$content1 = file_get_contents( $file_path1 );
 				$content2 = file_get_contents( $file_path2 );
 
