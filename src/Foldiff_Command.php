@@ -305,6 +305,7 @@ class Foldiff_Command {
 		$added_files   = [];
 		$removed_files = [];
 		$html_parts    = [];
+		$diff_files    = []; // Track files with diffs for TOC.
 
 		foreach ( $all_files as $relative_path ) {
 			$file_path1 = $files1[ $relative_path ] ?? null;
@@ -334,7 +335,12 @@ class Foldiff_Command {
 				}
 
 				$diff_html    = DiffHelper::calculate( $content1, $content2, 'Inline' );
-				$html_parts[] = '<div class="file-diff">';
+				$file_id      = $this->generate_file_id( $relative_path );
+				$diff_files[] = [
+					'path' => $relative_path,
+					'id'   => $file_id,
+				];
+				$html_parts[] = '<div class="file-diff" id="' . htmlspecialchars( $file_id, ENT_QUOTES, 'UTF-8' ) . '">';
 				$html_parts[] = '<h2 class="file-name">' . htmlspecialchars( $relative_path, ENT_QUOTES, 'UTF-8' ) . '</h2>';
 				$html_parts[] = $diff_html;
 				$html_parts[] = '</div>';
@@ -348,9 +354,9 @@ class Foldiff_Command {
 		}
 
 		// Detect folder renames by checking if only first-level folder name differs.
-		$renamed_diffs = [];
+		$renamed_diffs   = [];
 		$matched_removed = [];
-		$matched_added = [];
+		$matched_added   = [];
 
 		foreach ( $removed_files as $removed_path ) {
 			// Normalize path separators.
@@ -399,7 +405,7 @@ class Foldiff_Command {
 
 						if ( $content1 !== $content2 ) {
 							// File was renamed and has content differences.
-							$diff_html = DiffHelper::calculate( $content1, $content2, 'Inline' );
+							$diff_html       = DiffHelper::calculate( $content1, $content2, 'Inline' );
 							$renamed_diffs[] = [
 								'old_path'  => $removed_path,
 								'new_path'  => $added_path,
@@ -424,7 +430,12 @@ class Foldiff_Command {
 
 		// Add renamed file diffs to HTML parts.
 		foreach ( $renamed_diffs as $renamed_diff ) {
-			$html_parts[] = '<div class="file-diff renamed-file">';
+			$file_id      = $this->generate_file_id( $renamed_diff['new_path'] );
+			$diff_files[] = [
+				'path' => $renamed_diff['old_path'] . ' → ' . $renamed_diff['new_path'],
+				'id'   => $file_id,
+			];
+			$html_parts[] = '<div class="file-diff renamed-file" id="' . htmlspecialchars( $file_id, ENT_QUOTES, 'UTF-8' ) . '">';
 			$html_parts[] = '<h2 class="file-name">';
 			$html_parts[] = '<span class="file-rename-info">';
 			$html_parts[] = '<span class="rename-old">' . htmlspecialchars( $renamed_diff['old_path'], ENT_QUOTES, 'UTF-8' ) . '</span>';
@@ -445,7 +456,13 @@ class Foldiff_Command {
 				$summary_parts[] = '<h3 class="summary-title removed">Removed Files (' . count( $removed_files ) . ')</h3>';
 				$summary_parts[] = '<ul class="file-list removed">';
 				foreach ( $removed_files as $file ) {
-					$summary_parts[] = '<li>' . htmlspecialchars( $file, ENT_QUOTES, 'UTF-8' ) . '</li>';
+					// Check if this file has a corresponding diff.
+					$file_id = $this->find_diff_id_for_file( $file, $diff_files );
+					if ( $file_id ) {
+						$summary_parts[] = '<li><a href="#' . htmlspecialchars( $file_id, ENT_QUOTES, 'UTF-8' ) . '">' . htmlspecialchars( $file, ENT_QUOTES, 'UTF-8' ) . '</a></li>';
+					} else {
+						$summary_parts[] = '<li>' . htmlspecialchars( $file, ENT_QUOTES, 'UTF-8' ) . '</li>';
+					}
 				}
 				$summary_parts[] = '</ul>';
 				$summary_parts[] = '</div>';
@@ -455,7 +472,13 @@ class Foldiff_Command {
 				$summary_parts[] = '<h3 class="summary-title added">Added Files (' . count( $added_files ) . ')</h3>';
 				$summary_parts[] = '<ul class="file-list added">';
 				foreach ( $added_files as $file ) {
-					$summary_parts[] = '<li>' . htmlspecialchars( $file, ENT_QUOTES, 'UTF-8' ) . '</li>';
+					// Check if this file has a corresponding diff.
+					$file_id = $this->find_diff_id_for_file( $file, $diff_files );
+					if ( $file_id ) {
+						$summary_parts[] = '<li><a href="#' . htmlspecialchars( $file_id, ENT_QUOTES, 'UTF-8' ) . '">' . htmlspecialchars( $file, ENT_QUOTES, 'UTF-8' ) . '</a></li>';
+					} else {
+						$summary_parts[] = '<li>' . htmlspecialchars( $file, ENT_QUOTES, 'UTF-8' ) . '</li>';
+					}
 				}
 				$summary_parts[] = '</ul>';
 				$summary_parts[] = '</div>';
@@ -464,7 +487,7 @@ class Foldiff_Command {
 		}
 
 		// Generate complete HTML document.
-		$html_content = $this->build_html_document( $summary_parts, $html_parts );
+		$html_content = $this->build_html_document( $summary_parts, $html_parts, $diff_files );
 
 		// Save HTML file.
 		$html_filename = 'foldiff-' . date( 'Y-m-d-His' ) . '-' . uniqid() . '.html';
@@ -481,9 +504,10 @@ class Foldiff_Command {
 	 *
 	 * @param array $summary_parts Array of summary HTML content parts.
 	 * @param array $html_parts Array of HTML content parts.
+	 * @param array $diff_files Array of files with diffs for table of contents.
 	 * @return string Complete HTML document.
 	 */
-	private function build_html_document( $summary_parts, $html_parts ) {
+	private function build_html_document( $summary_parts, $html_parts, $diff_files = [] ) {
 		// Get default CSS from php-diff package.
 		$diff_css = DiffHelper::getStyleSheet();
 
@@ -595,6 +619,45 @@ class Foldiff_Command {
 			color: #155724;
 			font-weight: 600;
 		}
+		.table-of-contents {
+			margin-bottom: 40px;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			padding: 15px;
+			background-color: #f8f9fa;
+		}
+		.table-of-contents h2 {
+			margin: 0 0 15px 0;
+			font-size: 18px;
+			color: #333;
+		}
+		.table-of-contents ul {
+			margin: 0;
+			padding-left: 20px;
+			list-style-type: disc;
+		}
+		.table-of-contents li {
+			margin: 5px 0;
+			font-family: "Courier New", Courier, monospace;
+			font-size: 13px;
+		}
+		.table-of-contents a {
+			color: #0073aa;
+			text-decoration: none;
+		}
+		.table-of-contents a:hover {
+			text-decoration: underline;
+		}
+		.file-list a {
+			color: inherit;
+			text-decoration: none;
+		}
+		.file-list a:hover {
+			text-decoration: underline;
+		}
+		.file-diff {
+			scroll-margin-top: 20px;
+		}
 		' . $diff_css . '
 	</style>
 </head>
@@ -602,6 +665,7 @@ class Foldiff_Command {
 	<div class="container">
 		<h1>Folder Diff Comparison</h1>
 		' . implode( "\n", $summary_parts ) . '
+		' . $this->generate_table_of_contents( $diff_files ) . '
 		' . implode( "\n", $html_parts ) . '
 	</div>
 </body>
@@ -679,5 +743,65 @@ class Foldiff_Command {
 		}
 
 		rmdir( $dir );
+	}
+
+	/**
+	 * Generate unique ID for file path.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $file_path File path.
+	 * @return string Unique ID.
+	 */
+	private function generate_file_id( $file_path ) {
+		// Normalize path separators and create a safe ID.
+		$normalized = str_replace( [ '\\', '/', ' ', ':', '.', '-', '→' ], '_', $file_path );
+		$normalized = preg_replace( '/[^a-zA-Z0-9_]/', '', $normalized );
+		return 'file_' . md5( $file_path ) . '_' . $normalized;
+	}
+
+	/**
+	 * Find diff ID for a file path.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $file_path File path to search for.
+	 * @param array  $diff_files Array of diff files with 'path' and 'id' keys.
+	 * @return string|false Diff ID if found, false otherwise.
+	 */
+	private function find_diff_id_for_file( $file_path, $diff_files ) {
+		foreach ( $diff_files as $diff_file ) {
+			// Check if path matches exactly or is part of a rename path.
+			if ( $file_path === $diff_file['path'] || false !== strpos( $diff_file['path'], $file_path ) ) {
+				return $diff_file['id'];
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Generate table of contents HTML.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $diff_files Array of files with diffs.
+	 * @return string Table of contents HTML.
+	 */
+	private function generate_table_of_contents( $diff_files ) {
+		if ( empty( $diff_files ) ) {
+			return '';
+		}
+
+		$toc_parts   = [];
+		$toc_parts[] = '<div class="table-of-contents">';
+		$toc_parts[] = '<h2>Table of Contents</h2>';
+		$toc_parts[] = '<ul>';
+		foreach ( $diff_files as $diff_file ) {
+			$toc_parts[] = '<li><a href="#' . htmlspecialchars( $diff_file['id'], ENT_QUOTES, 'UTF-8' ) . '">' . htmlspecialchars( $diff_file['path'], ENT_QUOTES, 'UTF-8' ) . '</a></li>';
+		}
+		$toc_parts[] = '</ul>';
+		$toc_parts[] = '</div>';
+
+		return implode( "\n", $toc_parts );
 	}
 }
