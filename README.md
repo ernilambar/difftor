@@ -10,7 +10,7 @@ Quick links: [Using](#using) | [Installing](#installing)
 ## Using
 
 ~~~
-wp difftor <old_path> <new_path> [--porcelain]
+wp difftor <old_source> <new_source> [--porcelain]
 ~~~
 
 Supports comparing:
@@ -25,13 +25,13 @@ directory and can be viewed in a browser.
 
 **OPTIONS**
 
-	<old_path>
+	<old_source>
 		Path to the old/original source. Can be:
 		  - A URL pointing to a zip file
 		  - A local directory path
 		  - A local zip file path
 
-	<new_path>
+	<new_source>
 		Path to the new/modified source. Can be:
 		  - A URL pointing to a zip file
 		  - A local directory path

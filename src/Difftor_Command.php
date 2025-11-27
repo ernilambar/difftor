@@ -80,13 +80,13 @@ class Difftor_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 * <old_path>
+	 * <old_source>
 	 * : Path to the old/original source. Can be:
 	 *   - A URL pointing to a zip file
 	 *   - A local directory path
 	 *   - A local zip file path
 	 *
-	 * <new_path>
+	 * <new_source>
 	 * : Path to the new/modified source. Can be:
 	 *   - A URL pointing to a zip file
 	 *   - A local directory path
@@ -116,9 +116,9 @@ class Difftor_Command {
 	 * @when before_wp_load
 	 */
 	public function __invoke( $args, $assoc_args = [] ) {
-		// Validate that two paths are provided.
+		// Validate that two sources are provided.
 		if ( count( $args ) < 2 ) {
-			WP_CLI::error( 'Two paths are required: old_path and new_path. Each path can be a URL, local directory, or zip file.' );
+			WP_CLI::error( 'Two sources are required: old_source and new_source. Each source can be a URL, local directory, or zip file.' );
 		}
 
 		$path1 = Path_Utils::normalize_path( trim( $args[0] ) );
