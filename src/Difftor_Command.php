@@ -1,25 +1,25 @@
 <?php
 /**
- * Foldiff_Command
+ * Difftor_Command
  *
- * @package Foldiff_Command
+ * @package Difftor_Command
  */
 
-namespace Nilambar\Foldiff_Command;
+namespace Nilambar\Difftor_Command;
 
 use Jfcherng\Diff\DiffHelper;
-use Nilambar\Foldiff_Command\Utils\File_Utils;
-use Nilambar\Foldiff_Command\Utils\HTML_Utils;
-use Nilambar\Foldiff_Command\Utils\Path_Utils;
-use Nilambar\Foldiff_Command\Utils\Zip_Utils;
+use Nilambar\Difftor_Command\Utils\File_Utils;
+use Nilambar\Difftor_Command\Utils\HTML_Utils;
+use Nilambar\Difftor_Command\Utils\Path_Utils;
+use Nilambar\Difftor_Command\Utils\Zip_Utils;
 use WP_CLI;
 
 /**
- * Foldiff_Command Class.
+ * Difftor_Command Class.
  *
  * @since 1.0.0
  */
-class Foldiff_Command {
+class Difftor_Command {
 
 	/**
 	 * List of file extensions to ignore from diff (binary files).
@@ -433,3 +433,4 @@ class Foldiff_Command {
 		return $html_file;
 	}
 }
+

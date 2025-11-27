@@ -2,10 +2,10 @@
 /**
  * Path_Utils
  *
- * @package Foldiff_Command
+ * @package Difftor_Command
  */
 
-namespace Nilambar\Foldiff_Command\Utils;
+namespace Nilambar\Difftor_Command\Utils;
 
 /**
  * Path_Utils Class.

@@ -2,10 +2,10 @@
 /**
  * Zip_Utils
  *
- * @package Foldiff_Command
+ * @package Difftor_Command
  */
 
-namespace Nilambar\Foldiff_Command\Utils;
+namespace Nilambar\Difftor_Command\Utils;
 
 use WP_CLI;
 use ZipArchive;

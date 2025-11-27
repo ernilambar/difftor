@@ -1,5 +1,5 @@
 {
-  "name": "ernilambar/foldiff-command",
+  "name": "ernilambar/difftor-command",
   "description": "Diff helper.",
   "license": "MIT",
   "type": "wp-cli-package",
@@ -11,9 +11,9 @@
       "role": "Developer"
     }
   ],
-  "homepage": "https://github.com/ernilambar/foldiff-command",
+  "homepage": "https://github.com/ernilambar/difftor-command",
   "support": {
-    "issues": "https://github.com/ernilambar/foldiff-command/issues"
+    "issues": "https://github.com/ernilambar/difftor-command/issues"
   },
   "require": {
     "php": ">=7.4",
@@ -30,7 +30,7 @@
   "prefer-stable": true,
   "autoload": {
     "psr-4": {
-      "Nilambar\\Foldiff_Command\\": "src"
+      "Nilambar\\Difftor_Command\\": "src"
     },
     "files": [
       "command.php"
