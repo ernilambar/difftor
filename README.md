@@ -1,4 +1,4 @@
-ernilambar/foldiff-command
+ernilambar/difftor-command
 ==========================
 
 Diff helper.
@@ -61,13 +61,13 @@ Installing this package requires WP-CLI v2 or greater. Update to the latest stab
 Once you've done so, you can install the latest stable version of this package with:
 
 ```bash
-wp package install ernilambar/foldiff-command:@stable
+wp package install ernilambar/difftor-command:@stable
 ```
 
 To install the latest development version of this package, use the following command instead:
 
 ```bash
-wp package install ernilambar/foldiff-command:dev-main
+wp package install ernilambar/difftor-command:dev-main
 ```
 
 
