@@ -17,4 +17,4 @@ if ( file_exists( $wpcli_foldiff_autoload ) ) {
 	require_once $wpcli_foldiff_autoload;
 }
 
-WP_CLI::add_command( 'foldiff', Foldiff_Command::class );
+WP_CLI::add_command( 'difftor', Foldiff_Command::class );
