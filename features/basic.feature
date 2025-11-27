@@ -26,7 +26,7 @@ Feature: Test folders
 
   Scenario: Compare two local folders
 
-    When I run `wp foldiff view "foldiff-test/folder1|foldiff-test/folder2" --porcelain`
+    When I run `wp difftor foldiff-test/folder1 foldiff-test/folder2 --porcelain`
     Then STDOUT should not be empty
     And save STDOUT as {HTML_DIFF_FILE}
     And the {HTML_DIFF_FILE} file should exist

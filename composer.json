@@ -51,7 +51,7 @@
   },
   "extra": {
     "commands": [
-      "foldiff view"
+      "difftor"
     ],
     "readme": {
       "sections": [

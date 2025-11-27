@@ -80,12 +80,17 @@ class Foldiff_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 * <paths>
-	 * : Two paths separated by pipe (|). Each path can be:
+	 * <old_path>
+	 * : Path to the old/original source. Can be:
 	 *   - A URL pointing to a zip file
 	 *   - A local directory path
 	 *   - A local zip file path
-	 *   First path is the old/original source, second path is the new/modified source.
+	 *
+	 * <new_path>
+	 * : Path to the new/modified source. Can be:
+	 *   - A URL pointing to a zip file
+	 *   - A local directory path
+	 *   - A local zip file path
 	 *
 	 * [--porcelain]
 	 * : Output a single value.
@@ -93,16 +98,16 @@ class Foldiff_Command {
 	 * ## EXAMPLES
 	 *
 	 *     # Compare two URLs (zip files)
-	 *     $ wp foldiff view "https://example.com/file1.zip|https://example.com/file2.zip"
+	 *     $ wp difftor https://example.com/file1.zip https://example.com/file2.zip
 	 *
 	 *     # Compare two local directories
-	 *     $ wp foldiff view "/path/to/old-folder|/path/to/new-folder"
+	 *     $ wp difftor /path/to/old-folder /path/to/new-folder
 	 *
 	 *     # Compare two local zip files
-	 *     $ wp foldiff view "/path/to/old.zip|/path/to/new.zip"
+	 *     $ wp difftor /path/to/old.zip /path/to/new.zip
 	 *
 	 *     # Mixed: URL and local directory
-	 *     $ wp foldiff view "https://example.com/old.zip|/path/to/new-folder"
+	 *     $ wp difftor https://example.com/old.zip /path/to/new-folder
 	 *
 	 * @since 1.0.0
 	 *
@@ -110,22 +115,14 @@ class Foldiff_Command {
 	 * @param array $assoc_args Associated arguments.
 	 * @when before_wp_load
 	 */
-	public function view( $args, $assoc_args = [] ) {
-		$paths = $args[0];
-
-		// Validate paths format.
-		if ( false === strpos( $paths, '|' ) ) {
-			WP_CLI::error( 'Paths must contain two sources separated by pipe (|). Each source can be a URL, local directory, or zip file.' );
+	public function __invoke( $args, $assoc_args = [] ) {
+		// Validate that two paths are provided.
+		if ( count( $args ) < 2 ) {
+			WP_CLI::error( 'Two paths are required: old_path and new_path. Each path can be a URL, local directory, or zip file.' );
 		}
 
-		$path_array = explode( '|', $paths );
-
-		if ( 2 !== count( $path_array ) ) {
-			WP_CLI::error( 'Paths must contain exactly two sources separated by pipe (|).' );
-		}
-
-		$path1 = Path_Utils::normalize_path( trim( $path_array[0] ) );
-		$path2 = Path_Utils::normalize_path( trim( $path_array[1] ) );
+		$path1 = Path_Utils::normalize_path( trim( $args[0] ) );
+		$path2 = Path_Utils::normalize_path( trim( $args[1] ) );
 
 		$porcelain = isset( $assoc_args['porcelain'] );
 
@@ -152,13 +149,13 @@ class Foldiff_Command {
 
 		// Get temp directory for HTML file.
 		$temp_base   = sys_get_temp_dir();
-		$foldiff_dir = $temp_base . DIRECTORY_SEPARATOR . 'foldiff' . DIRECTORY_SEPARATOR;
-		if ( ! is_dir( $foldiff_dir ) ) {
-			mkdir( $foldiff_dir, 0755, true );
+		$difftor_dir = $temp_base . DIRECTORY_SEPARATOR . 'difftor' . DIRECTORY_SEPARATOR;
+		if ( ! is_dir( $difftor_dir ) ) {
+			mkdir( $difftor_dir, 0755, true );
 		}
 
 		// Generate HTML diff file.
-		$html_file = $this->generate_diff_html( $dir1, $dir2, $foldiff_dir );
+		$html_file = $this->generate_diff_html( $dir1, $dir2, $difftor_dir );
 
 		// Cleanup temporary directories (only if we created them).
 		if ( $is_temp_dir ) {
@@ -429,7 +426,7 @@ class Foldiff_Command {
 		$html_content = HTML_Utils::build_html_document( $summary_parts, $html_parts, $diff_files );
 
 		// Save HTML file.
-		$html_filename = 'foldiff-' . date( 'Y-m-d-His' ) . '-' . uniqid() . '.html';
+		$html_filename = 'difftor-' . date( 'Y-m-d-His' ) . '-' . uniqid() . '.html';
 		$html_file     = $cache_dir . $html_filename;
 		file_put_contents( $html_file, $html_content );
 

@@ -38,7 +38,7 @@ class Zip_Utils {
 		}
 
 		// Create temporary directory for extraction.
-		$temp_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'foldiff_' . uniqid( '', true );
+		$temp_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'difftor_' . uniqid( '', true );
 		if ( ! mkdir( $temp_dir, 0755, true ) ) {
 			WP_CLI::warning( 'Failed to create temporary directory.' );
 			return false;
@@ -91,7 +91,7 @@ class Zip_Utils {
 	 */
 	public static function download_and_extract_zip( $url ) {
 		// Create temporary file for zip.
-		$temp_zip = tempnam( sys_get_temp_dir(), 'foldiff_zip_' );
+		$temp_zip = tempnam( sys_get_temp_dir(), 'difftor_zip_' );
 		if ( false === $temp_zip ) {
 			WP_CLI::warning( 'Failed to create temporary file.' );
 			return false;
@@ -120,7 +120,7 @@ class Zip_Utils {
 				CURLOPT_FOLLOWLOCATION => true,
 				CURLOPT_TIMEOUT        => 300,
 				CURLOPT_CONNECTTIMEOUT => 30,
-				CURLOPT_USERAGENT      => 'WP-CLI Foldiff Command',
+				CURLOPT_USERAGENT      => 'WP-CLI Difftor Command',
 			]
 		);
 
@@ -150,7 +150,7 @@ class Zip_Utils {
 		}
 
 		// Create temporary directory for extraction.
-		$temp_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'foldiff_' . uniqid( '', true );
+		$temp_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'difftor_' . uniqid( '', true );
 		if ( ! mkdir( $temp_dir, 0755, true ) ) {
 			unlink( $temp_zip );
 			WP_CLI::warning( 'Failed to create temporary directory.' );
