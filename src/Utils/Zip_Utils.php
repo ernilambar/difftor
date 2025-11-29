@@ -2,12 +2,11 @@
 /**
  * Zip_Utils
  *
- * @package Difftor_Command
+ * @package Difftor
  */
 
-namespace Nilambar\Difftor_Command\Utils;
+namespace Nilambar\Difftor\Utils;
 
-use WP_CLI;
 use ZipArchive;
 
 /**
@@ -27,20 +26,17 @@ class Zip_Utils {
 	 */
 	public static function extract_local_zip( $zip_path ) {
 		if ( ! is_file( $zip_path ) ) {
-			WP_CLI::warning( 'Zip file does not exist: ' . $zip_path );
 			return false;
 		}
 
 		// Check if file is empty.
 		if ( 0 === filesize( $zip_path ) ) {
-			WP_CLI::warning( 'Zip file is empty: ' . $zip_path );
 			return false;
 		}
 
 		// Create temporary directory for extraction.
 		$temp_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'difftor_' . uniqid( '', true );
 		if ( ! mkdir( $temp_dir, 0755, true ) ) {
-			WP_CLI::warning( 'Failed to create temporary directory.' );
 			return false;
 		}
 
@@ -49,7 +45,6 @@ class Zip_Utils {
 		$result = $zip->open( $zip_path );
 		if ( true !== $result ) {
 			rmdir( $temp_dir );
-			WP_CLI::warning( 'Failed to open zip file: ' . $zip_path );
 			return false;
 		}
 
@@ -93,7 +88,6 @@ class Zip_Utils {
 		// Create temporary file for zip.
 		$temp_zip = tempnam( sys_get_temp_dir(), 'difftor_zip_' );
 		if ( false === $temp_zip ) {
-			WP_CLI::warning( 'Failed to create temporary file.' );
 			return false;
 		}
 
@@ -101,7 +95,6 @@ class Zip_Utils {
 		$ch = curl_init( $url );
 		if ( false === $ch ) {
 			unlink( $temp_zip );
-			WP_CLI::warning( 'Failed to initialize cURL for: ' . $url );
 			return false;
 		}
 
@@ -109,7 +102,6 @@ class Zip_Utils {
 		if ( false === $fp ) {
 			curl_close( $ch );
 			unlink( $temp_zip );
-			WP_CLI::warning( 'Failed to open temporary file for writing.' );
 			return false;
 		}
 
@@ -120,7 +112,7 @@ class Zip_Utils {
 				CURLOPT_FOLLOWLOCATION => true,
 				CURLOPT_TIMEOUT        => 300,
 				CURLOPT_CONNECTTIMEOUT => 30,
-				CURLOPT_USERAGENT      => 'WP-CLI Difftor Command',
+				CURLOPT_USERAGENT      => 'Difftor Command',
 			]
 		);
 
@@ -132,20 +124,17 @@ class Zip_Utils {
 
 		if ( false === $success || ! empty( $curl_error ) ) {
 			unlink( $temp_zip );
-			WP_CLI::warning( 'Failed to download zip file from: ' . $url . ' - ' . $curl_error );
 			return false;
 		}
 
 		if ( 200 !== $http_code ) {
 			unlink( $temp_zip );
-			WP_CLI::warning( 'Failed to download zip file from: ' . $url . ' - HTTP ' . $http_code );
 			return false;
 		}
 
 		// Check if file is empty.
 		if ( 0 === filesize( $temp_zip ) ) {
 			unlink( $temp_zip );
-			WP_CLI::warning( 'Downloaded zip file is empty from: ' . $url );
 			return false;
 		}
 
@@ -153,7 +142,6 @@ class Zip_Utils {
 		$temp_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'difftor_' . uniqid( '', true );
 		if ( ! mkdir( $temp_dir, 0755, true ) ) {
 			unlink( $temp_zip );
-			WP_CLI::warning( 'Failed to create temporary directory.' );
 			return false;
 		}
 
@@ -163,7 +151,6 @@ class Zip_Utils {
 		if ( true !== $result ) {
 			unlink( $temp_zip );
 			rmdir( $temp_dir );
-			WP_CLI::warning( 'Failed to open zip file from: ' . $url );
 			return false;
 		}
 

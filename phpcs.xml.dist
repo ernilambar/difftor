@@ -79,8 +79,8 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">
-				<element value="Nilambar\Difftor_Command"/><!-- Namespaces. -->
-				<element value="wpcli_difftor"/><!-- Global variables and such. -->
+				<element value="Nilambar\Difftor"/><!-- Namespaces. -->
+				<element value="difftor"/><!-- Global variables and such. -->
 			</property>
 		</properties>
 	</rule>

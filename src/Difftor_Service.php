@@ -1,25 +1,25 @@
 <?php
 /**
- * Difftor_Command
+ * Difftor_Service
  *
- * @package Difftor_Command
+ * @package Difftor
  */
 
-namespace Nilambar\Difftor_Command;
+namespace Nilambar\Difftor;
 
-use Jfcherng\Diff\DiffHelper;
-use Nilambar\Difftor_Command\Utils\File_Utils;
-use Nilambar\Difftor_Command\Utils\HTML_Utils;
-use Nilambar\Difftor_Command\Utils\Path_Utils;
-use Nilambar\Difftor_Command\Utils\Zip_Utils;
-use WP_CLI;
+use Nilambar\Difftor\Utils\File_Utils;
+use Nilambar\Difftor\Utils\HTML_Utils;
+use Nilambar\Difftor\Utils\Path_Utils;
+use Nilambar\Difftor\Utils\Zip_Utils;
 
 /**
- * Difftor_Command Class.
+ * Difftor_Service Class.
+ *
+ * Core service class that handles diff generation without CLI dependencies.
  *
  * @since 1.0.0
  */
-class Difftor_Command {
+class Difftor_Service {
 
 	/**
 	 * List of file extensions to ignore from diff (binary files).
@@ -66,114 +66,6 @@ class Difftor_Command {
 	];
 
 	/**
-	 * Compares two sources (URLs, local directories, or zip files) and generates an HTML diff file.
-	 *
-	 * Supports comparing:
-	 * - Two URLs pointing to zip files
-	 * - Two local directories
-	 * - Two local zip files
-	 * - Mixed combinations (e.g., URL and local directory)
-	 *
-	 * The sources are extracted/prepared to temporary directories (if needed) and an HTML diff
-	 * file is generated showing the differences. The HTML file is saved in the WP-CLI cache
-	 * directory and can be viewed in a browser.
-	 *
-	 * ## OPTIONS
-	 *
-	 * <old_source>
-	 * : Path to the old/original source. Can be:
-	 *   - A URL pointing to a zip file
-	 *   - A local directory path
-	 *   - A local zip file path
-	 *
-	 * <new_source>
-	 * : Path to the new/modified source. Can be:
-	 *   - A URL pointing to a zip file
-	 *   - A local directory path
-	 *   - A local zip file path
-	 *
-	 * [--porcelain]
-	 * : Output a single value.
-	 *
-	 * ## EXAMPLES
-	 *
-	 *     # Compare two URLs (zip files)
-	 *     $ wp difftor https://example.com/file1.zip https://example.com/file2.zip
-	 *
-	 *     # Compare two local directories
-	 *     $ wp difftor /path/to/old-folder /path/to/new-folder
-	 *
-	 *     # Compare two local zip files
-	 *     $ wp difftor /path/to/old.zip /path/to/new.zip
-	 *
-	 *     # Mixed: URL and local directory
-	 *     $ wp difftor https://example.com/old.zip /path/to/new-folder
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param array $args Arguments.
-	 * @param array $assoc_args Associated arguments.
-	 * @when before_wp_load
-	 */
-	public function __invoke( $args, $assoc_args = [] ) {
-		// Validate that two sources are provided.
-		if ( count( $args ) < 2 ) {
-			WP_CLI::error( 'Two sources are required: old_source and new_source. Each source can be a URL, local directory, or zip file.' );
-		}
-
-		$path1 = Path_Utils::normalize_path( trim( $args[0] ) );
-		$path2 = Path_Utils::normalize_path( trim( $args[1] ) );
-
-		$porcelain = isset( $assoc_args['porcelain'] );
-
-		// Prepare first source (download/extract if needed).
-		$result1 = $this->prepare_source( $path1 );
-		if ( false === $result1 ) {
-			WP_CLI::error( 'Failed to prepare first source: ' . $path1 );
-		}
-
-		$dir1        = $result1['directory'];
-		$is_temp_dir = $result1['is_temp'];
-
-		// Prepare second source (download/extract if needed).
-		$result2 = $this->prepare_source( $path2 );
-		if ( false === $result2 ) {
-			if ( $is_temp_dir ) {
-				File_Utils::cleanup_temp_directory( $dir1 );
-			}
-			WP_CLI::error( 'Failed to prepare second source: ' . $path2 );
-		}
-
-		$dir2         = $result2['directory'];
-		$is_temp_dir2 = $result2['is_temp'];
-
-		// Get temp directory for HTML file.
-		$temp_base   = sys_get_temp_dir();
-		$difftor_dir = $temp_base . DIRECTORY_SEPARATOR . 'difftor' . DIRECTORY_SEPARATOR;
-		if ( ! is_dir( $difftor_dir ) ) {
-			mkdir( $difftor_dir, 0755, true );
-		}
-
-		// Generate HTML diff file.
-		$html_file = $this->generate_diff_html( $dir1, $dir2, $difftor_dir );
-
-		// Cleanup temporary directories (only if we created them).
-		if ( $is_temp_dir ) {
-			File_Utils::cleanup_temp_directory( $dir1 );
-		}
-		if ( $is_temp_dir2 ) {
-			File_Utils::cleanup_temp_directory( $dir2 );
-		}
-
-		if ( $porcelain ) {
-			WP_CLI::line( $html_file );
-		} else {
-			WP_CLI::success( 'Diff HTML file generated: ' . $html_file );
-		}
-	}
-
-
-	/**
 	 * Prepare source (URL, directory, or zip file) for diff comparison.
 	 *
 	 * Handles three types of sources:
@@ -186,7 +78,7 @@ class Difftor_Command {
 	 * @param string $path Path to source (URL, directory, or zip file).
 	 * @return array|false Array with 'directory' and 'is_temp' keys, or false on error.
 	 */
-	private function prepare_source( $path ) {
+	public function prepare_source( $path ) {
 		if ( Path_Utils::is_url( $path ) ) {
 			// Handle URL - download and extract zip.
 			$dir = Zip_Utils::download_and_extract_zip( $path );
@@ -213,13 +105,70 @@ class Difftor_Command {
 				'directory' => $dir,
 				'is_temp'   => true,
 			];
-		} else {
-			WP_CLI::warning( 'Invalid path: ' . $path . ' (must be URL, directory, or zip file)' );
-			return false;
 		}
+
+		return false;
 	}
 
+	/**
+	 * Generate diff HTML file between two sources.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $old_source Old source path (URL, directory, or zip).
+	 * @param string $new_source New source path (URL, directory, or zip).
+	 * @param string $output_dir Output directory for HTML file. Defaults to system temp.
+	 * @return string|false HTML file path on success, false on error.
+	 */
+	public function generate_diff( $old_source, $new_source, $output_dir = null ) {
+		// Normalize paths.
+		$path1 = Path_Utils::normalize_path( trim( $old_source ) );
+		$path2 = Path_Utils::normalize_path( trim( $new_source ) );
 
+		// Prepare first source (download/extract if needed).
+		$result1 = $this->prepare_source( $path1 );
+		if ( false === $result1 ) {
+			return false;
+		}
+
+		$dir1        = $result1['directory'];
+		$is_temp_dir = $result1['is_temp'];
+
+		// Prepare second source (download/extract if needed).
+		$result2 = $this->prepare_source( $path2 );
+		if ( false === $result2 ) {
+			if ( $is_temp_dir ) {
+				File_Utils::cleanup_temp_directory( $dir1 );
+			}
+			return false;
+		}
+
+		$dir2         = $result2['directory'];
+		$is_temp_dir2 = $result2['is_temp'];
+
+		// Get output directory.
+		if ( null === $output_dir ) {
+			$temp_base   = sys_get_temp_dir();
+			$output_dir = $temp_base . DIRECTORY_SEPARATOR . 'difftor' . DIRECTORY_SEPARATOR;
+		}
+
+		if ( ! is_dir( $output_dir ) ) {
+			mkdir( $output_dir, 0755, true );
+		}
+
+		// Generate HTML diff file.
+		$html_file = $this->generate_diff_html( $dir1, $dir2, $output_dir );
+
+		// Cleanup temporary directories (only if we created them).
+		if ( $is_temp_dir ) {
+			File_Utils::cleanup_temp_directory( $dir1 );
+		}
+		if ( $is_temp_dir2 ) {
+			File_Utils::cleanup_temp_directory( $dir2 );
+		}
+
+		return $html_file;
+	}
 
 	/**
 	 * Generate HTML diff file between two directories.
@@ -270,7 +219,7 @@ class Difftor_Command {
 					continue; // Skip identical files.
 				}
 
-				$diff_html    = DiffHelper::calculate( $content1, $content2, 'Inline' );
+				$diff_html    = \Jfcherng\Diff\DiffHelper::calculate( $content1, $content2, 'Inline' );
 				$file_id      = HTML_Utils::generate_file_id( $relative_path );
 				$diff_files[] = [
 					'path' => $relative_path,
@@ -341,7 +290,7 @@ class Difftor_Command {
 
 						if ( $content1 !== $content2 ) {
 							// File was renamed and has content differences.
-							$diff_html       = DiffHelper::calculate( $content1, $content2, 'Inline' );
+							$diff_html       = \Jfcherng\Diff\DiffHelper::calculate( $content1, $content2, 'Inline' );
 							$renamed_diffs[] = [
 								'old_path'  => $removed_path,
 								'new_path'  => $added_path,
