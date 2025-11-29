@@ -217,8 +217,13 @@ class DifftorService
 				}
 
 				// Compare text files.
-				$content1 = file_get_contents($file_path1);
-				$content2 = file_get_contents($file_path2);
+				$content1 = FileUtils::readFileAsUtf8($file_path1);
+				$content2 = FileUtils::readFileAsUtf8($file_path2);
+
+				if (false === $content1 || false === $content2) {
+					// Skip files that can't be read.
+					continue;
+				}
 
 				if ($content1 === $content2) {
 					continue; // Skip identical files.
@@ -290,8 +295,13 @@ class DifftorService
 
 					if (! $should_ignore) {
 						// Compare content.
-						$content1 = file_get_contents($file1);
-						$content2 = file_get_contents($file2);
+						$content1 = FileUtils::readFileAsUtf8($file1);
+						$content2 = FileUtils::readFileAsUtf8($file2);
+
+						if (false === $content1 || false === $content2) {
+							// Skip files that can't be read.
+							continue;
+						}
 
 						if ($content1 !== $content2) {
 							// File was renamed and has content differences.
