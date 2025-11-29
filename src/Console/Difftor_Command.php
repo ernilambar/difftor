@@ -2,12 +2,12 @@
 /**
  * Difftor_Command
  *
- * @package Difftor_Command
+ * @package Difftor
  */
 
-namespace Nilambar\Difftor_Command\Console;
+namespace Nilambar\Difftor\Console;
 
-use Nilambar\Difftor_Command\Difftor_Service;
+use Nilambar\Difftor\Difftor_Service;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;

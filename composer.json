@@ -1,6 +1,6 @@
 {
-  "name": "ernilambar/difftor-command",
-  "description": "Diff helper.",
+  "name": "ernilambar/difftor",
+  "description": "Diff helper - Compare two sources (URLs, directories, or zip files) and generate an HTML diff file.",
   "license": "MIT",
   "type": "library",
   "authors": [
@@ -11,9 +11,9 @@
       "role": "Developer"
     }
   ],
-  "homepage": "https://github.com/ernilambar/difftor-command",
+  "homepage": "https://github.com/ernilambar/difftor",
   "support": {
-    "issues": "https://github.com/ernilambar/difftor-command/issues"
+    "issues": "https://github.com/ernilambar/difftor/issues"
   },
   "require": {
     "php": ">=7.4",
@@ -28,7 +28,7 @@
   "prefer-stable": true,
   "autoload": {
     "psr-4": {
-      "Nilambar\\Difftor_Command\\": "src"
+      "Nilambar\\Difftor\\": "src"
     }
   },
   "bin": [

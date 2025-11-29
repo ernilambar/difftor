@@ -3,7 +3,7 @@
 /**
  * Difftor CLI Entry Point
  *
- * @package Difftor_Command
+ * @package Difftor
  */
 
 if ( file_exists( __DIR__ . '/../vendor/autoload.php' ) ) {
@@ -15,7 +15,7 @@ if ( file_exists( __DIR__ . '/../vendor/autoload.php' ) ) {
 	exit( 1 );
 }
 
-use Nilambar\Difftor_Command\Console\Difftor_Command;
+use Nilambar\Difftor\Console\Difftor_Command;
 use Symfony\Component\Console\Application;
 
 $application = new Application( 'Difftor', '1.0.0' );

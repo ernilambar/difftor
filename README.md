@@ -1,5 +1,5 @@
-ernilambar/difftor-command
-==========================
+ernilambar/difftor
+==================
 
 Diff helper - Compare two sources (URLs, directories, or zip files) and generate an HTML diff file.
 
@@ -65,7 +65,7 @@ directory (or specified output directory) and can be viewed in a browser.
 Install via Composer globally:
 
 ```bash
-composer global require ernilambar/difftor-command
+composer global require ernilambar/difftor
 ```
 
 Then use the `difftor` command:
@@ -86,8 +86,8 @@ Or add `~/.composer/vendor/bin` to your PATH.
 ### Setup
 
 ```bash
-git clone https://github.com/ernilambar/difftor-command.git
-cd difftor-command
+git clone https://github.com/ernilambar/difftor.git
+cd difftor
 composer install
 ```
 

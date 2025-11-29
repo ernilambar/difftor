@@ -25,6 +25,9 @@
         <exclude>
             <directory>src/Console</directory>
         </exclude>
+        <report>
+            <clover outputFile="coverage.xml"/>
+        </report>
     </coverage>
 </phpunit>
 

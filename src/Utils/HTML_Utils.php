@@ -2,10 +2,10 @@
 /**
  * HTML_Utils
  *
- * @package Difftor_Command
+ * @package Difftor
  */
 
-namespace Nilambar\Difftor_Command\Utils;
+namespace Nilambar\Difftor\Utils;
 
 use Jfcherng\Diff\DiffHelper;
 

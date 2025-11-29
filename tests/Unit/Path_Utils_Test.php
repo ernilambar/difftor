@@ -2,12 +2,12 @@
 /**
  * Path_Utils_Test
  *
- * @package Difftor_Command
+ * @package Difftor
  */
 
-namespace Nilambar\Difftor_Command\Tests\Unit;
+namespace Nilambar\Difftor\Tests\Unit;
 
-use Nilambar\Difftor_Command\Utils\Path_Utils;
+use Nilambar\Difftor\Utils\Path_Utils;
 use PHPUnit\Framework\TestCase;
 
 /**

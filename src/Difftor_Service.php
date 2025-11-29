@@ -2,15 +2,15 @@
 /**
  * Difftor_Service
  *
- * @package Difftor_Command
+ * @package Difftor
  */
 
-namespace Nilambar\Difftor_Command;
+namespace Nilambar\Difftor;
 
-use Nilambar\Difftor_Command\Utils\File_Utils;
-use Nilambar\Difftor_Command\Utils\HTML_Utils;
-use Nilambar\Difftor_Command\Utils\Path_Utils;
-use Nilambar\Difftor_Command\Utils\Zip_Utils;
+use Nilambar\Difftor\Utils\File_Utils;
+use Nilambar\Difftor\Utils\HTML_Utils;
+use Nilambar\Difftor\Utils\Path_Utils;
+use Nilambar\Difftor\Utils\Zip_Utils;
 
 /**
  * Difftor_Service Class.

@@ -2,12 +2,12 @@
 /**
  * Zip_Utils_Test
  *
- * @package Difftor_Command
+ * @package Difftor
  */
 
-namespace Nilambar\Difftor_Command\Tests\Unit;
+namespace Nilambar\Difftor\Tests\Unit;
 
-use Nilambar\Difftor_Command\Utils\Zip_Utils;
+use Nilambar\Difftor\Utils\Zip_Utils;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -41,7 +41,7 @@ class Zip_Utils_Test extends TestCase {
 		$this->assertEquals( 'test content', file_get_contents( $extracted_dir . DIRECTORY_SEPARATOR . 'test.txt' ) );
 
 		// Cleanup.
-		\Nilambar\Difftor_Command\Utils\File_Utils::cleanup_temp_directory( $extracted_dir );
+		\Nilambar\Difftor\Utils\File_Utils::cleanup_temp_directory( $extracted_dir );
 		unlink( $temp_zip );
 
 		// Test with nonexistent file.
