@@ -45,11 +45,11 @@ class DifftorCommand extends Command
 				'  difftor https://example.com/old.zip /path/to/new-folder'
 		)->addArgument(
 			'old_source',
-			InputArgument::REQUIRED,
+			InputArgument::OPTIONAL,
 			'Path to the old/original source. Can be a URL, local directory, or zip file.'
 		)->addArgument(
 			'new_source',
-			InputArgument::REQUIRED,
+			InputArgument::OPTIONAL,
 			'Path to the new/modified source. Can be a URL, local directory, or zip file.'
 		)->addOption(
 			'output-dir',
@@ -61,6 +61,11 @@ class DifftorCommand extends Command
 			null,
 			InputOption::VALUE_NONE,
 			'Output only the file path, suitable for parsing.'
+		)->addOption(
+			'version',
+			'v',
+			InputOption::VALUE_NONE,
+			'Display the application version.'
 		);
 	}
 
@@ -75,14 +80,26 @@ class DifftorCommand extends Command
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
+		// Handle version display.
+		if ($input->getOption('version')) {
+			$application = $this->getApplication();
+			$version     = null !== $application ? $application->getVersion() : '1.0.0';
+			$output->writeln($version);
+			return Command::SUCCESS;
+		}
+
 		$old_source = $input->getArgument('old_source');
 		$new_source = $input->getArgument('new_source');
+
+		// Validate required arguments when not showing version.
+		if (empty($old_source) || empty($new_source)) {
+			$output->writeln('<error>Error: Both old_source and new_source arguments are required.</error>');
+			return Command::FAILURE;
+		}
 		$output_dir = $input->getOption('output-dir');
 		$porcelain  = $input->getOption('porcelain');
 
 		$service = new DifftorService();
-
-		$output->writeln('<info>Preparing sources...</info>', OutputInterface::VERBOSITY_VERBOSE);
 
 		$html_file = $service->generateDiff($old_source, $new_source, $output_dir);
 
