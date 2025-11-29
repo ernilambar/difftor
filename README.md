@@ -94,17 +94,15 @@ composer install
 ### Running Tests
 
 ```bash
-# Run unit tests
+# Run unit tests.
 composer phpunit
 
-# Run all tests (lint, phpcs, phpunit)
+# Run all tests.
 composer test
 ```
 
-### Project Structure
+## Copyright and License
 
-- `src/Difftor_Service.php` - Core service class
-- `src/Console/Difftor_Command.php` - Symfony Console command
-- `src/Utils/` - Utility classes (File_Utils, HTML_Utils, Path_Utils, Zip_Utils)
-- `bin/difftor` - CLI entry point
-- `tests/Unit/` - Unit tests
+This project is licensed under the [MIT](http://opensource.org/licenses/MIT).
+
+2025 &copy; [Nilambar Sharma](https://www.nilambar.net).

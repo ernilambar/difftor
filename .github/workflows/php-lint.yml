@@ -1,0 +1,65 @@
+name: PHP Linting
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'release/**'
+    # Only run if PHP-related files changed.
+    paths:
+      - '.github/workflows/php-lint.yml'
+      - '**.php'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpcs.xml.dist'
+  pull_request:
+    branches:
+      - main
+      - master
+      - 'release/**'
+      - 'feature/**'
+    # Only run if PHP-related files changed.
+    paths:
+      - '.github/workflows/php-lint.yml'
+      - '**.php'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpcs.xml.dist'
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  php-lint:
+    name: PHP Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          tools: composer
+          php-version: '8.2'
+
+      - name: Install PHP dependencies
+        uses: ramsey/composer-install@v3
+        with:
+          composer-options: '--prefer-dist --no-interaction'
+
+      - name: Make Composer packages available globally
+        run: |
+          echo "${PWD}/vendor/bin" >> $GITHUB_PATH
+
+      - name: Run PHP lint
+        run: composer lint
+

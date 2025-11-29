@@ -1,6 +1,7 @@
 <?php
+
 /**
- * HTML_Utils
+ * HtmlUtils
  *
  * @package Difftor
  */
@@ -10,12 +11,12 @@ namespace Nilambar\Difftor\Utils;
 use Jfcherng\Diff\DiffHelper;
 
 /**
- * HTML_Utils Class.
+ * HtmlUtils Class.
  *
  * @since 1.0.0
  */
-class HTML_Utils {
-
+class HtmlUtils
+{
 	/**
 	 * Generate unique ID for file path.
 	 *
@@ -24,11 +25,12 @@ class HTML_Utils {
 	 * @param string $file_path File path.
 	 * @return string Unique ID.
 	 */
-	public static function generate_file_id( $file_path ) {
+	public static function generateFileId($file_path)
+	{
 		// Normalize path separators and create a safe ID.
-		$normalized = str_replace( [ '\\', '/', ' ', ':', '.', '-', '→' ], '_', $file_path );
-		$normalized = preg_replace( '/[^a-zA-Z0-9_]/', '', $normalized );
-		return 'file_' . md5( $file_path ) . '_' . $normalized;
+		$normalized = str_replace([ '\\', '/', ' ', ':', '.', '-', '→' ], '_', $file_path);
+		$normalized = preg_replace('/[^a-zA-Z0-9_]/', '', $normalized);
+		return 'file_' . md5($file_path) . '_' . $normalized;
 	}
 
 	/**
@@ -40,10 +42,11 @@ class HTML_Utils {
 	 * @param array  $diff_files Array of diff files with 'path' and 'id' keys.
 	 * @return string|false Diff ID if found, false otherwise.
 	 */
-	public static function find_diff_id_for_file( $file_path, $diff_files ) {
-		foreach ( $diff_files as $diff_file ) {
+	public static function findDiffIdForFile($file_path, $diff_files)
+	{
+		foreach ($diff_files as $diff_file) {
 			// Check if path matches exactly or is part of a rename path.
-			if ( $file_path === $diff_file['path'] || false !== strpos( $diff_file['path'], $file_path ) ) {
+			if ($file_path === $diff_file['path'] || false !== strpos($diff_file['path'], $file_path)) {
 				return $diff_file['id'];
 			}
 		}
@@ -58,8 +61,9 @@ class HTML_Utils {
 	 * @param array $diff_files Array of files with diffs.
 	 * @return string Table of contents HTML.
 	 */
-	public static function generate_table_of_contents( $diff_files ) {
-		if ( empty( $diff_files ) ) {
+	public static function generateTableOfContents($diff_files)
+	{
+		if (empty($diff_files)) {
 			return '';
 		}
 
@@ -67,13 +71,13 @@ class HTML_Utils {
 		$toc_parts[] = '<div class="table-of-contents">';
 		$toc_parts[] = '<h2>Table of Contents</h2>';
 		$toc_parts[] = '<ul>';
-		foreach ( $diff_files as $diff_file ) {
-			$toc_parts[] = '<li><a href="#' . htmlspecialchars( $diff_file['id'], ENT_QUOTES, 'UTF-8' ) . '">' . htmlspecialchars( $diff_file['path'], ENT_QUOTES, 'UTF-8' ) . '</a></li>';
+		foreach ($diff_files as $diff_file) {
+			$toc_parts[] = '<li><a href="#' . htmlspecialchars($diff_file['id'], ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($diff_file['path'], ENT_QUOTES, 'UTF-8') . '</a></li>';
 		}
 		$toc_parts[] = '</ul>';
 		$toc_parts[] = '</div>';
 
-		return implode( "\n", $toc_parts );
+		return implode("\n", $toc_parts);
 	}
 
 	/**
@@ -86,7 +90,8 @@ class HTML_Utils {
 	 * @param array $diff_files Array of files with diffs for table of contents.
 	 * @return string Complete HTML document.
 	 */
-	public static function build_html_document( $summary_parts, $html_parts, $diff_files = [] ) {
+	public static function buildHtmlDocument($summary_parts, $html_parts, $diff_files = [])
+	{
 		// Get default CSS from php-diff package.
 		$diff_css = DiffHelper::getStyleSheet();
 
@@ -243,9 +248,9 @@ class HTML_Utils {
 <body>
 	<div class="container">
 		<h1>Folder Diff Comparison</h1>
-		' . implode( "\n", $summary_parts ) . '
-		' . self::generate_table_of_contents( $diff_files ) . '
-		' . implode( "\n", $html_parts ) . '
+		' . implode("\n", $summary_parts) . '
+		' . self::generateTableOfContents($diff_files) . '
+		' . implode("\n", $html_parts) . '
 	</div>
 </body>
 </html>';
