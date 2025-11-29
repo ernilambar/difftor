@@ -9,6 +9,7 @@ namespace Nilambar\Difftor\Tests\Unit;
 
 use Nilambar\Difftor\Utils\Path_Utils;
 use PHPUnit\Framework\TestCase;
+use ZipArchive;
 
 /**
  * Path_Utils Test Class.
@@ -71,8 +72,8 @@ class Path_Utils_Test extends TestCase {
 	public function test_is_local_zip() {
 		// Create a temporary zip file for testing.
 		$temp_zip = tempnam( sys_get_temp_dir(), 'test_' ) . '.zip';
-		$zip      = new \ZipArchive();
-		$zip->open( $temp_zip, \ZipArchive::CREATE );
+		$zip      = new ZipArchive();
+		$zip->open( $temp_zip, ZipArchive::CREATE );
 		$zip->addFromString( 'test.txt', 'test content' );
 		$zip->close();
 
@@ -106,4 +107,3 @@ class Path_Utils_Test extends TestCase {
 		}
 	}
 }
-

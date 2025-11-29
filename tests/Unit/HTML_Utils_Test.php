@@ -115,4 +115,3 @@ class HTML_Utils_Test extends TestCase {
 		$this->assertStringContainsString( 'Content', $html );
 	}
 }
-

@@ -7,8 +7,10 @@
 
 namespace Nilambar\Difftor\Tests\Unit;
 
+use Nilambar\Difftor\Utils\File_Utils;
 use Nilambar\Difftor\Utils\Zip_Utils;
 use PHPUnit\Framework\TestCase;
+use ZipArchive;
 
 /**
  * Zip_Utils Test Class.
@@ -25,8 +27,8 @@ class Zip_Utils_Test extends TestCase {
 	public function test_extract_local_zip() {
 		// Create a temporary zip file.
 		$temp_zip = tempnam( sys_get_temp_dir(), 'test_' ) . '.zip';
-		$zip      = new \ZipArchive();
-		$zip->open( $temp_zip, \ZipArchive::CREATE );
+		$zip      = new ZipArchive();
+		$zip->open( $temp_zip, ZipArchive::CREATE );
 		$zip->addFromString( 'test.txt', 'test content' );
 		$zip->addFromString( 'subdir/nested.txt', 'nested content' );
 		$zip->close();
@@ -41,7 +43,7 @@ class Zip_Utils_Test extends TestCase {
 		$this->assertEquals( 'test content', file_get_contents( $extracted_dir . DIRECTORY_SEPARATOR . 'test.txt' ) );
 
 		// Cleanup.
-		\Nilambar\Difftor\Utils\File_Utils::cleanup_temp_directory( $extracted_dir );
+		File_Utils::cleanup_temp_directory( $extracted_dir );
 		unlink( $temp_zip );
 
 		// Test with nonexistent file.
@@ -54,4 +56,3 @@ class Zip_Utils_Test extends TestCase {
 		unlink( $empty_zip );
 	}
 }
-

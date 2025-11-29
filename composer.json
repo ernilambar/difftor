@@ -18,11 +18,15 @@
   "require": {
     "php": ">=7.4",
     "jfcherng/php-diff": "^6",
-    "symfony/console": "^5.4|^6.0|^7.0"
+    "symfony/console": "^5.4 || ^6.0 || ^7.0"
   },
   "require-dev": {
+    "dealerdirect/phpcodesniffer-composer-installer": "^1",
+    "php-parallel-lint/php-parallel-lint": "^1.4",
+    "phpcompatibility/php-compatibility": "dev-develop#2b7b6e8f5d0ccae3bd41c25bcf1298884a5e1f62",
+    "phpunit/phpunit": "^9.5 || ^10.0",
     "slevomat/coding-standard": "^8",
-    "phpunit/phpunit": "^9.5|^10.0"
+    "wp-coding-standards/wpcs": "^3"
   },
   "minimum-stability": "dev",
   "prefer-stable": true,
@@ -43,22 +47,20 @@
     "platform": {
       "php": "7.4"
     },
-    "process-timeout": 7200,
     "sort-packages": true
   },
   "extra": {},
   "scripts": {
-    "format": "run-phpcbf-cleanup",
+    "format": "vendor/bin/phpcbf",
     "lint": [
-      "run-linter-tests",
+      "@php-lint",
       "@phpcs"
     ],
-    "phpcs": "run-phpcs-tests",
-    "phpstan": "run-phpstan-tests",
-    "phpunit": "phpunit",
+    "php-lint": "@php ./vendor/bin/parallel-lint --colors --exclude .git --exclude vendor .",
+    "phpcs": "vendor/bin/phpcs",
+    "phpunit": "vendor/bin/phpunit",
     "test": [
       "@lint",
-      "@phpcs",
       "@phpunit"
     ]
   }

@@ -103,4 +103,3 @@ class Difftor_Command extends Command {
 		return Command::SUCCESS;
 	}
 }
-

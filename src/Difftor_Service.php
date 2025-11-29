@@ -7,6 +7,7 @@
 
 namespace Nilambar\Difftor;
 
+use Jfcherng\Diff\DiffHelper;
 use Nilambar\Difftor\Utils\File_Utils;
 use Nilambar\Difftor\Utils\HTML_Utils;
 use Nilambar\Difftor\Utils\Path_Utils;
@@ -148,7 +149,7 @@ class Difftor_Service {
 
 		// Get output directory.
 		if ( null === $output_dir ) {
-			$temp_base   = sys_get_temp_dir();
+			$temp_base  = sys_get_temp_dir();
 			$output_dir = $temp_base . DIRECTORY_SEPARATOR . 'difftor' . DIRECTORY_SEPARATOR;
 		}
 
@@ -219,7 +220,7 @@ class Difftor_Service {
 					continue; // Skip identical files.
 				}
 
-				$diff_html    = \Jfcherng\Diff\DiffHelper::calculate( $content1, $content2, 'Inline' );
+				$diff_html    = DiffHelper::calculate( $content1, $content2, 'Inline' );
 				$file_id      = HTML_Utils::generate_file_id( $relative_path );
 				$diff_files[] = [
 					'path' => $relative_path,
@@ -290,7 +291,7 @@ class Difftor_Service {
 
 						if ( $content1 !== $content2 ) {
 							// File was renamed and has content differences.
-							$diff_html       = \Jfcherng\Diff\DiffHelper::calculate( $content1, $content2, 'Inline' );
+							$diff_html       = DiffHelper::calculate( $content1, $content2, 'Inline' );
 							$renamed_diffs[] = [
 								'old_path'  => $removed_path,
 								'new_path'  => $added_path,
@@ -382,4 +383,3 @@ class Difftor_Service {
 		return $html_file;
 	}
 }
-

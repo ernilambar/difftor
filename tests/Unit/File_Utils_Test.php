@@ -84,4 +84,3 @@ class File_Utils_Test extends TestCase {
 		$this->assertFalse( is_dir( $temp_dir ) );
 	}
 }
-
