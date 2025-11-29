@@ -25,8 +25,7 @@
     "php-parallel-lint/php-parallel-lint": "^1.4",
     "phpcompatibility/php-compatibility": "dev-develop#2b7b6e8f5d0ccae3bd41c25bcf1298884a5e1f62",
     "phpunit/phpunit": "^9.5 || ^10.0",
-    "slevomat/coding-standard": "^8",
-    "wp-coding-standards/wpcs": "^3"
+    "slevomat/coding-standard": "^8"
   },
   "minimum-stability": "dev",
   "prefer-stable": true,

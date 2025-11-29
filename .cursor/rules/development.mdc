@@ -17,7 +17,6 @@ alwaysApply: true
 
   PHP Standards
   - Use PHP 7.4+ features when appropriate (e.g., typed properties, arrow functions).
-  - Follow WordPress PHP Coding Standards (WPCS) for consistency.
   - File structure: Organize code into logical namespaces and directories.
   - Implement proper error handling:
     - Use standard PHP exceptions for error conditions.

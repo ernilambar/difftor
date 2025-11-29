@@ -24,20 +24,51 @@
 	<!-- Check up to 8 files simultaneously. -->
 	<arg name="parallel" value="8"/>
 
-	<rule ref="WordPress-Core">
-		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
-		<exclude name="WordPress.Files.FileName"/>
-		<exclude name="WordPress.WP.GlobalVariablesOverride"/>
-		<exclude name="WordPress.WP.CapitalPDangit.MisspelledInText"/>
-	</rule>
-
-	<rule ref="WordPress-Extra">
-		<exclude name="WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents"/>
-		<exclude name="WordPress.WP.AlternativeFunctions.json_encode_json_encode"/>
+	<!-- Use PSR12 as base standard (includes spacing rules). -->
+	<!-- Note: Our tab indentation rules below will override PSR12's space-based indentation. -->
+	<rule ref="PSR12">
+		<exclude name="PSR1.Files.SideEffects"/>
+		<exclude name="Generic.Files.LineLength"/>
+		<exclude name="Generic.WhiteSpace.ScopeIndent"/>
+		<exclude name="Generic.WhiteSpace.DisallowTabIndent"/>
 	</rule>
 
 	<!-- Enforce short arrays. -->
 	<rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+
+	<!-- Spacing rules from Generic standard. -->
+	<!-- Enforce tab indentation (as per workspace rules). -->
+	<rule ref="Generic.WhiteSpace.DisallowSpaceIndent"/>
+	<!-- Check scope indentation with tabs. -->
+	<rule ref="Generic.WhiteSpace.ScopeIndent">
+		<properties>
+			<property name="indent" value="1"/>
+			<property name="tabIndent" value="true"/>
+		</properties>
+	</rule>
+	<!-- Check for superfluous whitespace. -->
+	<rule ref="Squiz.WhiteSpace.SuperfluousWhitespace"/>
+
+	<!-- Operator spacing. -->
+	<rule ref="Squiz.WhiteSpace.OperatorSpacing">
+		<properties>
+			<property name="ignoreNewlines" value="true"/>
+		</properties>
+	</rule>
+	<!-- Control structure spacing. -->
+	<rule ref="Squiz.WhiteSpace.ControlStructureSpacing"/>
+	<!-- Function spacing. -->
+	<rule ref="Squiz.WhiteSpace.FunctionSpacing">
+		<properties>
+			<property name="spacing" value="1"/>
+			<property name="spacingBeforeFirst" value="0"/>
+			<property name="spacingAfterLast" value="0"/>
+		</properties>
+	</rule>
+	<!-- Object operator spacing. -->
+	<rule ref="Squiz.WhiteSpace.ObjectOperatorSpacing"/>
+	<!-- Scope closing brace spacing. -->
+	<rule ref="Squiz.WhiteSpace.ScopeClosingBrace"/>
 
 	<rule ref="PHPCompatibility">
 		<exclude name="PHPCompatibility.FunctionUse.NewFunctions.str_containsFound"/>
@@ -69,17 +100,6 @@
 			<property name="allowFullyQualifiedGlobalConstants" value="true" />
 			<property name="allowFullyQualifiedGlobalFunctions" value="true" />
 			<property name="allowFullyQualifiedNameForCollidingClasses" value="true" />
-		</properties>
-	</rule>
-
-	<!-- Verify that everything in the global namespace is either namespaced or prefixed.
-		 See: https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/wiki/Customizable-sniff-properties#naming-conventions-prefix-everything-in-the-global-namespace -->
-	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
-		<properties>
-			<property name="prefixes" type="array">
-				<element value="Nilambar\Difftor"/><!-- Namespaces. -->
-				<element value="difftor"/><!-- Global variables and such. -->
-			</property>
 		</properties>
 	</rule>
 
