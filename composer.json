@@ -2,7 +2,7 @@
   "name": "ernilambar/difftor-command",
   "description": "Diff helper.",
   "license": "MIT",
-  "type": "wp-cli-package",
+  "type": "library",
   "authors": [
     {
       "name": "Nilambar Sharma",
@@ -18,29 +18,26 @@
   "require": {
     "php": ">=7.4",
     "jfcherng/php-diff": "^6",
-    "wp-cli/wp-cli": "^2"
+    "symfony/console": "^5.4|^6.0|^7.0"
   },
   "require-dev": {
     "slevomat/coding-standard": "^8",
-    "wp-cli/extension-command": "^2",
-    "wp-cli/scaffold-package-command": "^2",
-    "wp-cli/wp-cli-tests": "^5"
+    "phpunit/phpunit": "^9.5|^10.0"
   },
   "minimum-stability": "dev",
   "prefer-stable": true,
   "autoload": {
     "psr-4": {
       "Nilambar\\Difftor_Command\\": "src"
-    },
-    "files": [
-      "command.php"
-    ]
+    }
   },
+  "bin": [
+    "bin/difftor"
+  ],
   "config": {
     "allow-plugins": {
       "dealerdirect/phpcodesniffer-composer-installer": true,
       "ergebnis/composer-normalize": true,
-      "johnpbloch/wordpress-core-installer": true,
       "phpstan/extension-installer": true
     },
     "platform": {
@@ -49,20 +46,8 @@
     "process-timeout": 7200,
     "sort-packages": true
   },
-  "extra": {
-    "commands": [
-      "difftor"
-    ],
-    "readme": {
-      "sections": [
-        "Using",
-        "Installing"
-      ]
-    }
-  },
+  "extra": {},
   "scripts": {
-    "behat": "run-behat-tests",
-    "behat-rerun": "rerun-behat-tests",
     "format": "run-phpcbf-cleanup",
     "lint": [
       "run-linter-tests",
@@ -70,14 +55,11 @@
     ],
     "phpcs": "run-phpcs-tests",
     "phpstan": "run-phpstan-tests",
-    "phpunit": "run-php-unit-tests",
-    "prepare-behat-tests": "install-package-tests",
-    "readme": "./vendor/bin/wp scaffold package-readme . --force --branch=main",
+    "phpunit": "phpunit",
     "test": [
       "@lint",
       "@phpcs",
-      "@phpunit",
-      "@behat"
+      "@phpunit"
     ]
   }
 }

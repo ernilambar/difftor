@@ -1,17 +1,15 @@
 ernilambar/difftor-command
 ==========================
 
-Diff helper.
+Diff helper - Compare two sources (URLs, directories, or zip files) and generate an HTML diff file.
 
-
-
-Quick links: [Using](#using) | [Installing](#installing)
+Quick links: [Using](#using) | [Installing](#installing) | [Development](#development)
 
 ## Using
 
-~~~
-wp difftor <old_source> <new_source> [--porcelain]
-~~~
+```bash
+difftor <old_source> <new_source> [--output-dir=DIR] [--porcelain]
+```
 
 Supports comparing:
 - Two URLs pointing to zip files
@@ -20,10 +18,10 @@ Supports comparing:
 - Mixed combinations (e.g., URL and local directory)
 
 The sources are extracted/prepared to temporary directories (if needed) and an HTML diff
-file is generated showing the differences. The HTML file is saved in the WP-CLI cache
-directory and can be viewed in a browser.
+file is generated showing the differences. The HTML file is saved in the system temp
+directory (or specified output directory) and can be viewed in a browser.
 
-**OPTIONS**
+**ARGUMENTS**
 
 	<old_source>
 		Path to the old/original source. Can be:
@@ -37,38 +35,76 @@ directory and can be viewed in a browser.
 		  - A local directory path
 		  - A local zip file path
 
+**OPTIONS**
+
+	[--output-dir=DIR]
+		Output directory for the HTML diff file. Defaults to system temp directory.
+
 	[--porcelain]
-		Output a single value.
+		Output only the file path, suitable for parsing.
 
 **EXAMPLES**
 
     # Compare two URLs (zip files)
-    $ wp difftor https://example.com/file1.zip https://example.com/file2.zip
+    $ difftor https://example.com/file1.zip https://example.com/file2.zip
 
     # Compare two local directories
-    $ wp difftor /path/to/old-folder /path/to/new-folder
+    $ difftor /path/to/old-folder /path/to/new-folder
 
     # Compare two local zip files
-    $ wp difftor /path/to/old.zip /path/to/new.zip
+    $ difftor /path/to/old.zip /path/to/new.zip
 
     # Mixed: URL and local directory
-    $ wp difftor https://example.com/old.zip /path/to/new-folder
+    $ difftor https://example.com/old.zip /path/to/new-folder
+
+    # Specify output directory
+    $ difftor /path/to/old /path/to/new --output-dir=/tmp/diffs
 
 ## Installing
 
-Installing this package requires WP-CLI v2 or greater. Update to the latest stable release with `wp cli update`.
-
-Once you've done so, you can install the latest stable version of this package with:
+Install via Composer globally:
 
 ```bash
-wp package install ernilambar/difftor-command:@stable
+composer global require ernilambar/difftor-command
 ```
 
-To install the latest development version of this package, use the following command instead:
+Then use the `difftor` command:
 
 ```bash
-wp package install ernilambar/difftor-command:dev-main
+~/.composer/vendor/bin/difftor <old_source> <new_source>
 ```
 
+Or add `~/.composer/vendor/bin` to your PATH.
 
-*This README.md is generated dynamically from the project's codebase using `wp scaffold package-readme` ([doc](https://github.com/wp-cli/scaffold-package-command#wp-scaffold-package-readme)). To suggest changes, please submit a pull request against the corresponding part of the codebase.*
+## Development
+
+### Requirements
+
+- PHP 7.4 or higher
+- Composer
+
+### Setup
+
+```bash
+git clone https://github.com/ernilambar/difftor-command.git
+cd difftor-command
+composer install
+```
+
+### Running Tests
+
+```bash
+# Run unit tests
+composer phpunit
+
+# Run all tests (lint, phpcs, phpunit)
+composer test
+```
+
+### Project Structure
+
+- `src/Difftor_Service.php` - Core service class
+- `src/Console/Difftor_Command.php` - Symfony Console command
+- `src/Utils/` - Utility classes (File_Utils, HTML_Utils, Path_Utils, Zip_Utils)
+- `bin/difftor` - CLI entry point
+- `tests/Unit/` - Unit tests
