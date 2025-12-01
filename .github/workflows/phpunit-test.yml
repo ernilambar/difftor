@@ -13,6 +13,7 @@ on:
       - 'composer.json'
       - 'composer.lock'
       - 'phpunit.xml.dist'
+      - 'bin/difftor'
   pull_request:
     branches:
       - main
@@ -26,6 +27,7 @@ on:
       - 'composer.json'
       - 'composer.lock'
       - 'phpunit.xml.dist'
+      - 'bin/difftor'
     types:
       - opened
       - reopened
