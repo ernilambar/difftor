@@ -73,7 +73,7 @@ class DifftorCommand extends Command
 	 * @param OutputInterface $output Output interface.
 	 * @return int Exit code.
 	 */
-	protected function execute(InputInterface $input, OutputInterface $output)
+	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
 		$old_source = $input->getArgument('old_source');
 		$new_source = $input->getArgument('new_source');
