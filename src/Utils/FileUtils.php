@@ -92,6 +92,29 @@ class FileUtils
 	}
 
 	/**
+	 * Check if file is a system file.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $file_path File path.
+	 * @return bool True if file is a system file, false otherwise.
+	 */
+	public static function isSystemFile($file_path)
+	{
+		$basename = basename($file_path);
+		$basename_lower = strtolower($basename);
+
+		$system_files = [
+			'.ds_store',
+			'ds_store',
+			'desktop.ini',
+			'thumbs.db',
+		];
+
+		return in_array($basename_lower, $system_files, true);
+	}
+
+	/**
 	 * Check if file should be ignored from diff.
 	 *
 	 * @since 1.0.0
@@ -102,6 +125,11 @@ class FileUtils
 	 */
 	public static function shouldIgnoreFile($file_path, $ignored_extensions)
 	{
+		// Check if it's a system file first.
+		if (self::isSystemFile($file_path)) {
+			return true;
+		}
+
 		$extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
 		return in_array($extension, $ignored_extensions, true);
 	}

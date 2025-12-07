@@ -201,7 +201,7 @@ class DifftorService
 			$file_path1 = $files1[ $relative_path ] ?? null;
 			$file_path2 = $files2[ $relative_path ] ?? null;
 
-			// Check if file should be ignored from diff.
+			// Check if file should be ignored from diff (includes system files and binary files).
 			$should_ignore = false;
 			if ($file_path1 && FileUtils::shouldIgnoreFile($file_path1, $this->ignored_extensions)) {
 				$should_ignore = true;
@@ -212,7 +212,7 @@ class DifftorService
 			if ($file_path1 && $file_path2) {
 				// Both files exist.
 				if ($should_ignore) {
-					// Skip binary files from diff - we can't meaningfully diff them.
+					// Skip binary files and system files from diff - we can't meaningfully diff them.
 					continue;
 				}
 
@@ -241,9 +241,11 @@ class DifftorService
 				$html_parts[] = '</div>';
 			} elseif ($file_path1) {
 				// File only exists in first directory.
+				// System files are still added to summary but won't have diff sections.
 				$removed_files[] = $relative_path;
 			} else {
 				// File only exists in second directory.
+				// System files are still added to summary but won't have diff sections.
 				$added_files[] = $relative_path;
 			}
 		}
@@ -286,6 +288,11 @@ class DifftorService
 				if ($path_after_first === $added_path_after_first) {
 					$file1 = $files1[ $removed_path ];
 					$file2 = $files2[ $added_path ];
+
+					// Skip system files from renamed file detection.
+					if (FileUtils::isSystemFile($file1) || FileUtils::isSystemFile($file2)) {
+						continue;
+					}
 
 					// Check if file should be ignored from diff.
 					$should_ignore = false;
