@@ -18,7 +18,7 @@ if ( file_exists( __DIR__ . '/../vendor/autoload.php' ) ) {
 use Nilambar\Difftor\Console\DifftorCommand;
 use Symfony\Component\Console\Application;
 
-$application = new Application( 'Difftor', '1.0.0' );
+$application = new Application( 'Difftor', '1.0.1' );
 $application->add( new DifftorCommand() );
 $application->setDefaultCommand( 'difftor', true );
 $application->run();
