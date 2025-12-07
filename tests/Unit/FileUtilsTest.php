@@ -46,6 +46,40 @@ class FileUtilsTest extends TestCase
 	}
 
 	/**
+	 * Test isSystemFile method.
+	 *
+	 * @since 1.0.0
+	 */
+	public function testIsSystemFile()
+	{
+		// Test .DS_Store variations (with dot).
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/.DS_Store'));
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/.ds_store'));
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/.DS_STORE'));
+
+		// Test ds_store variations (without dot).
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/ds_store'));
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/DS_Store'));
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/DS_STORE'));
+
+		// Test desktop.ini variations.
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/desktop.ini'));
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/Desktop.Ini'));
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/DESKTOP.INI'));
+
+		// Test Thumbs.db variations.
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/Thumbs.db'));
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/thumbs.db'));
+		$this->assertTrue(FileUtils::isSystemFile('/path/to/THUMBS.DB'));
+
+		// Test non-system files.
+		$this->assertFalse(FileUtils::isSystemFile('/path/to/file.txt'));
+		$this->assertFalse(FileUtils::isSystemFile('/path/to/.gitignore'));
+		$this->assertFalse(FileUtils::isSystemFile('/path/to/normal_file'));
+		$this->assertFalse(FileUtils::isSystemFile('/path/to/ds_store_backup'));
+	}
+
+	/**
 	 * Test shouldIgnoreFile method.
 	 *
 	 * @since 1.0.0
@@ -54,9 +88,18 @@ class FileUtilsTest extends TestCase
 	{
 		$ignored_extensions = [ 'jpg', 'png', 'zip' ];
 
+		// Test binary file extensions.
 		$this->assertTrue(FileUtils::shouldIgnoreFile('/path/to/image.jpg', $ignored_extensions));
 		$this->assertTrue(FileUtils::shouldIgnoreFile('/path/to/image.PNG', $ignored_extensions));
 		$this->assertTrue(FileUtils::shouldIgnoreFile('/path/to/archive.zip', $ignored_extensions));
+
+		// Test system files.
+		$this->assertTrue(FileUtils::shouldIgnoreFile('/path/to/.DS_Store', $ignored_extensions));
+		$this->assertTrue(FileUtils::shouldIgnoreFile('/path/to/ds_store', $ignored_extensions));
+		$this->assertTrue(FileUtils::shouldIgnoreFile('/path/to/desktop.ini', $ignored_extensions));
+		$this->assertTrue(FileUtils::shouldIgnoreFile('/path/to/Thumbs.db', $ignored_extensions));
+
+		// Test non-ignored files.
 		$this->assertFalse(FileUtils::shouldIgnoreFile('/path/to/file.txt', $ignored_extensions));
 		$this->assertFalse(FileUtils::shouldIgnoreFile('/path/to/file.php', $ignored_extensions));
 		$this->assertFalse(FileUtils::shouldIgnoreFile('/path/to/file', $ignored_extensions));
