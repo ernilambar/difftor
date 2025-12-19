@@ -44,6 +44,7 @@ class DifftorService
 		'ico',
 		'jpeg',
 		'jpg',
+		'mo',
 		'mov',
 		'mp3',
 		'mp4',
