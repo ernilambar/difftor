@@ -1,15 +1,43 @@
+# Operating System files
+._*
 .DS_Store
-wp-cli.local.yml
-node_modules/
-vendor/
-reports/
+.Spotlight-V100
+.Trashes
+.Trash-*
+Desktop.ini
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/*
+*.sublime-project
+*.sublime-workspace
+
+# Environment files
+.env
+.env.*
+!.env.example
+*.local
+*.local.*
+
+# Ignored extensions
+*.bak
 *.cache
-*.zip
-*.tar.gz
-*.swp
-*.txt
+*.diff
+*.err
 *.log
-composer.lock
-phpunit.xml
-phpcs.xml
-.phpcs.xml
+*.log.*
+*.map
+*.orig
+*.pyc
+*.rej
+*.sw?
+*.tmp
+*.zip
+*~
+
+# Project folders
+/build/
+/deploy/
+/node_modules/
+/vendor/

@@ -1,0 +1,12 @@
+/.DS_store? export-ignore
+/.editorconfig export-ignore
+/.git export-ignore
+/.gitattributes export-ignore
+/.github export-ignore
+/.gitignore export-ignore
+/*.DS_store export-ignore
+/CLAUDE.md export-ignore
+/CONTRIBUTING.md export-ignore
+/phpcs.xml.dist export-ignore
+/phpunit.xml.dist export-ignore
+/tests export-ignore
