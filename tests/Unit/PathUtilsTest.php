@@ -35,6 +35,20 @@ class PathUtilsTest extends TestCase
 	}
 
 	/**
+	 * Test that non-http(s) URL schemes are rejected.
+	 *
+	 * @since 2.0.0
+	 */
+	public function testIsUrlRejectsNonHttpSchemes()
+	{
+		$this->assertFalse(PathUtils::isUrl('file:///etc/passwd'));
+		$this->assertFalse(PathUtils::isUrl('ftp://example.com/file.zip'));
+		$this->assertFalse(PathUtils::isUrl('gopher://example.com/'));
+		$this->assertFalse(PathUtils::isUrl('javascript:alert(1)'));
+		$this->assertFalse(PathUtils::isUrl('data:text/plain,hello'));
+	}
+
+	/**
 	 * Test isAbsolutePath method.
 	 *
 	 * @since 1.0.0

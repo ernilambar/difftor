@@ -9,6 +9,8 @@
 namespace Nilambar\Difftor;
 
 use Jfcherng\Diff\DiffHelper;
+use Nilambar\Difftor\Exception\DifftorException;
+use Nilambar\Difftor\Exception\SourceNotFoundException;
 use Nilambar\Difftor\Utils\FileUtils;
 use Nilambar\Difftor\Utils\HtmlUtils;
 use Nilambar\Difftor\Utils\PathUtils;
@@ -75,49 +77,87 @@ class DifftorService
 	];
 
 	/**
+	 * Maximum download size in bytes.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @var int
+	 */
+	private $max_download_size;
+
+	/**
+	 * Maximum uncompressed extracted size in bytes.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @var int
+	 */
+	private $max_extracted_size;
+
+	/**
+	 * Maximum number of files inside a zip archive.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @var int
+	 */
+	private $max_file_count;
+
+	/**
+	 * Constructor.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $options Optional keys: max_download_size, max_extracted_size, max_file_count.
+	 */
+	public function __construct(array $options = [])
+	{
+		$this->max_download_size  = $options['max_download_size'] ?? ZipUtils::DEFAULT_MAX_DOWNLOAD_SIZE;
+		$this->max_extracted_size = $options['max_extracted_size'] ?? ZipUtils::DEFAULT_MAX_EXTRACTED_SIZE;
+		$this->max_file_count     = $options['max_file_count'] ?? ZipUtils::DEFAULT_MAX_FILE_COUNT;
+	}
+
+	/**
 	 * Prepare source (URL, directory, or zip file) for diff comparison.
 	 *
 	 * Handles three types of sources:
-	 * - URLs: Downloads and extracts zip file to temp directory
+	 * - URLs (http/https only): Downloads and extracts zip file to temp directory
 	 * - Local directories: Returns directory path directly
 	 * - Local zip files: Extracts to temp directory
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $path Path to source (URL, directory, or zip file).
-	 * @return array|false Array with 'directory' and 'is_temp' keys, or false on error.
+	 * @return array Array with 'directory' and 'is_temp' keys.
+	 * @throws SourceNotFoundException When the path is not a valid source type.
+	 * @throws DifftorException On download or extraction failures.
 	 */
 	public function prepareSource($path)
 	{
 		if (PathUtils::isUrl($path)) {
-			// Handle URL - download and extract zip.
-			$dir = ZipUtils::downloadAndExtractZip($path);
-			if (false === $dir) {
-				return false;
-			}
-			return [
-				'directory' => $dir,
-				'is_temp'   => true,
-			];
-		} elseif (PathUtils::isLocalDirectory($path)) {
-			// Handle local directory - use directly.
-			return [
-				'directory' => $path,
-				'is_temp'   => false,
-			];
-		} elseif (PathUtils::isLocalZip($path)) {
-			// Handle local zip file - extract to temp directory.
-			$dir = ZipUtils::extractLocalZip($path);
-			if (false === $dir) {
-				return false;
-			}
+			$dir = ZipUtils::downloadAndExtractZip($path, $this->max_download_size, $this->max_extracted_size, $this->max_file_count);
 			return [
 				'directory' => $dir,
 				'is_temp'   => true,
 			];
 		}
 
-		return false;
+		if (PathUtils::isLocalDirectory($path)) {
+			return [
+				'directory' => $path,
+				'is_temp'   => false,
+			];
+		}
+
+		if (PathUtils::isLocalZip($path)) {
+			$dir = ZipUtils::extractLocalZip($path, $this->max_extracted_size, $this->max_file_count);
+			return [
+				'directory' => $dir,
+				'is_temp'   => true,
+			];
+		}
+
+		throw new SourceNotFoundException(sprintf('Source is not a valid http(s) URL, local directory, or zip file: %s', $path));
 	}
 
 	/**
@@ -128,54 +168,55 @@ class DifftorService
 	 * @param string $old_source Old source path (URL, directory, or zip).
 	 * @param string $new_source New source path (URL, directory, or zip).
 	 * @param string $output_dir Output directory for HTML file. Defaults to system temp.
-	 * @return string|false HTML file path on success, false on error.
+	 * @return string HTML file path.
+	 * @throws SourceNotFoundException When a source is not a valid type.
+	 * @throws DifftorException On download, extraction, or output failure.
 	 */
 	public function generateDiff($old_source, $new_source, $output_dir = null)
 	{
-		// Normalize paths.
 		$path1 = PathUtils::normalizePath(trim($old_source));
 		$path2 = PathUtils::normalizePath(trim($new_source));
 
-		// Prepare first source (download/extract if needed).
-		$result1 = $this->prepareSource($path1);
-		if (false === $result1) {
-			return false;
-		}
-
+		$result1     = $this->prepareSource($path1);
 		$dir1        = $result1['directory'];
 		$is_temp_dir = $result1['is_temp'];
 
-		// Prepare second source (download/extract if needed).
-		$result2 = $this->prepareSource($path2);
-		if (false === $result2) {
+		try {
+			$result2 = $this->prepareSource($path2);
+		} catch (DifftorException $e) {
 			if ($is_temp_dir) {
 				FileUtils::cleanupTempDirectory($dir1);
 			}
-			return false;
+			throw $e;
 		}
 
 		$dir2         = $result2['directory'];
 		$is_temp_dir2 = $result2['is_temp'];
 
-		// Get output directory.
 		if (null === $output_dir) {
 			$temp_base  = sys_get_temp_dir();
 			$output_dir = $temp_base . DIRECTORY_SEPARATOR . 'difftor' . DIRECTORY_SEPARATOR;
 		}
 
-		if (! is_dir($output_dir)) {
-			mkdir($output_dir, 0755, true);
+		if (! is_dir($output_dir) && ! mkdir($output_dir, 0755, true) && ! is_dir($output_dir)) {
+			if ($is_temp_dir) {
+				FileUtils::cleanupTempDirectory($dir1);
+			}
+			if ($is_temp_dir2) {
+				FileUtils::cleanupTempDirectory($dir2);
+			}
+			throw new DifftorException(sprintf('Failed to create output directory: %s', $output_dir));
 		}
 
-		// Generate HTML diff file.
-		$html_file = $this->generateDiffHtml($dir1, $dir2, $output_dir);
-
-		// Cleanup temporary directories (only if we created them).
-		if ($is_temp_dir) {
-			FileUtils::cleanupTempDirectory($dir1);
-		}
-		if ($is_temp_dir2) {
-			FileUtils::cleanupTempDirectory($dir2);
+		try {
+			$html_file = $this->generateDiffHtml($dir1, $dir2, $output_dir);
+		} finally {
+			if ($is_temp_dir) {
+				FileUtils::cleanupTempDirectory($dir1);
+			}
+			if ($is_temp_dir2) {
+				FileUtils::cleanupTempDirectory($dir2);
+			}
 		}
 
 		return $html_file;
@@ -190,6 +231,7 @@ class DifftorService
 	 * @param string $dir2 Second directory path.
 	 * @param string $cache_dir Cache directory path.
 	 * @return string HTML file path.
+	 * @throws DifftorException When the output file cannot be written.
 	 */
 	private function generateDiffHtml($dir1, $dir2, $cache_dir)
 	{
@@ -239,8 +281,10 @@ class DifftorService
 				$diff_html    = DiffHelper::calculate($content1, $content2, 'Inline');
 				$file_id      = HtmlUtils::generateFileId($relative_path);
 				$diff_files[] = [
-					'path' => $relative_path,
-					'id'   => $file_id,
+					'id'       => $file_id,
+					'path'     => $relative_path,
+					'old_path' => $relative_path,
+					'new_path' => $relative_path,
 				];
 				$html_parts[] = '<div class="file-diff" id="' . htmlspecialchars($file_id, ENT_QUOTES, 'UTF-8') . '">';
 				$html_parts[] = '<h2 class="file-name">' . htmlspecialchars($relative_path, ENT_QUOTES, 'UTF-8') . '</h2>';
@@ -346,8 +390,10 @@ class DifftorService
 		foreach ($renamed_diffs as $renamed_diff) {
 			$file_id      = HtmlUtils::generateFileId($renamed_diff['new_path']);
 			$diff_files[] = [
-				'path' => $renamed_diff['old_path'] . ' → ' . $renamed_diff['new_path'],
-				'id'   => $file_id,
+				'id'       => $file_id,
+				'path'     => $renamed_diff['old_path'] . ' → ' . $renamed_diff['new_path'],
+				'old_path' => $renamed_diff['old_path'],
+				'new_path' => $renamed_diff['new_path'],
 			];
 			$html_parts[] = '<div class="file-diff renamed-file" id="' . htmlspecialchars($file_id, ENT_QUOTES, 'UTF-8') . '">';
 			$html_parts[] = '<h2 class="file-name">';
@@ -406,7 +452,9 @@ class DifftorService
 		// Save HTML file.
 		$html_filename = 'difftor-' . date('Y-m-d-His') . '-' . uniqid() . '.html';
 		$html_file     = $cache_dir . $html_filename;
-		file_put_contents($html_file, $html_content);
+		if (false === file_put_contents($html_file, $html_content)) {
+			throw new DifftorException(sprintf('Failed to write output file: %s', $html_file));
+		}
 
 		return $html_file;
 	}

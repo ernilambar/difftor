@@ -46,16 +46,25 @@ class PathUtils
 	}
 
 	/**
-	 * Check if path is a URL.
+	 * Check if path is an http(s) URL.
+	 *
+	 * Only http and https schemes are accepted. Other schemes (file://, ftp://,
+	 * gopher://, javascript:, etc.) are rejected to prevent SSRF and local file
+	 * disclosure via curl.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $path Path to check.
-	 * @return bool True if path is a URL, false otherwise.
+	 * @return bool True if path is an http(s) URL, false otherwise.
 	 */
 	public static function isUrl($path)
 	{
-		return false !== filter_var($path, FILTER_VALIDATE_URL);
+		if (false === filter_var($path, FILTER_VALIDATE_URL)) {
+			return false;
+		}
+
+		$scheme = strtolower((string) parse_url($path, PHP_URL_SCHEME));
+		return 'http' === $scheme || 'https' === $scheme;
 	}
 
 	/**

@@ -50,23 +50,49 @@ class HtmlUtilsTest extends TestCase
 	{
 		$diff_files = [
 			[
-				'path' => 'file1.txt',
-				'id'   => 'file_id_1',
+				'id'       => 'file_id_1',
+				'path'     => 'file1.txt',
+				'old_path' => 'file1.txt',
+				'new_path' => 'file1.txt',
 			],
 			[
-				'path' => 'file2.txt',
-				'id'   => 'file_id_2',
+				'id'       => 'file_id_2',
+				'path'     => 'file2.txt',
+				'old_path' => 'file2.txt',
+				'new_path' => 'file2.txt',
 			],
 			[
-				'path' => 'old.txt → new.txt',
-				'id'   => 'file_id_3',
+				'id'       => 'file_id_3',
+				'path'     => 'old.txt → new.txt',
+				'old_path' => 'old.txt',
+				'new_path' => 'new.txt',
 			],
 		];
 
 		$this->assertEquals('file_id_1', HtmlUtils::findDiffIdForFile('file1.txt', $diff_files));
 		$this->assertEquals('file_id_2', HtmlUtils::findDiffIdForFile('file2.txt', $diff_files));
 		$this->assertEquals('file_id_3', HtmlUtils::findDiffIdForFile('old.txt', $diff_files));
+		$this->assertEquals('file_id_3', HtmlUtils::findDiffIdForFile('new.txt', $diff_files));
 		$this->assertFalse(HtmlUtils::findDiffIdForFile('nonexistent.txt', $diff_files));
+	}
+
+	/**
+	 * Regression: substring collisions between file names and rename labels must not match.
+	 *
+	 * @since 2.0.0
+	 */
+	public function testFindDiffIdForFileDoesNotMatchSubstring()
+	{
+		$diff_files = [
+			[
+				'id'       => 'renamed',
+				'path'     => 'old_foo.txt → new_foo.txt',
+				'old_path' => 'old_foo.txt',
+				'new_path' => 'new_foo.txt',
+			],
+		];
+
+		$this->assertFalse(HtmlUtils::findDiffIdForFile('foo.txt', $diff_files));
 	}
 
 	/**

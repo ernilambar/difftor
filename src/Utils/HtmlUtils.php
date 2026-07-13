@@ -36,17 +36,22 @@ class HtmlUtils
 	/**
 	 * Find diff ID for a file path.
 	 *
+	 * Matches against explicit old_path / new_path fields so that renamed-file
+	 * lookups never collide with regular-file paths that appear as substrings
+	 * of a rename label.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $file_path File path to search for.
-	 * @param array  $diff_files Array of diff files with 'path' and 'id' keys.
+	 * @param array  $diff_files Array of diff files with 'path', 'id', 'old_path', 'new_path' keys.
 	 * @return string|false Diff ID if found, false otherwise.
 	 */
 	public static function findDiffIdForFile($file_path, $diff_files)
 	{
 		foreach ($diff_files as $diff_file) {
-			// Check if path matches exactly or is part of a rename path.
-			if ($file_path === $diff_file['path'] || false !== strpos($diff_file['path'], $file_path)) {
+			$old_path = $diff_file['old_path'] ?? null;
+			$new_path = $diff_file['new_path'] ?? null;
+			if ($file_path === $old_path || $file_path === $new_path) {
 				return $diff_file['id'];
 			}
 		}

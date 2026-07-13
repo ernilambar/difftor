@@ -46,6 +46,36 @@ class FileUtilsTest extends TestCase
 	}
 
 	/**
+	 * Test that symlinks are skipped by getDirectoryFiles.
+	 *
+	 * @since 2.0.0
+	 */
+	public function testGetDirectoryFilesSkipsSymlinks()
+	{
+		if ('WIN' === strtoupper(substr(PHP_OS, 0, 3))) {
+			$this->markTestSkipped('Symlink test skipped on Windows.');
+		}
+
+		$temp_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'difftor_symlink_' . uniqid();
+		$outside  = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'difftor_outside_' . uniqid();
+		mkdir($temp_dir, 0755, true);
+		mkdir($outside, 0755, true);
+
+		file_put_contents($temp_dir . DIRECTORY_SEPARATOR . 'real.txt', 'inside');
+		file_put_contents($outside . DIRECTORY_SEPARATOR . 'secret.txt', 'outside');
+		symlink($outside . DIRECTORY_SEPARATOR . 'secret.txt', $temp_dir . DIRECTORY_SEPARATOR . 'link.txt');
+
+		$files = FileUtils::getDirectoryFiles($temp_dir);
+
+		$this->assertArrayHasKey('real.txt', $files);
+		$this->assertArrayNotHasKey('link.txt', $files);
+
+		unlink($temp_dir . DIRECTORY_SEPARATOR . 'link.txt');
+		FileUtils::cleanupTempDirectory($temp_dir);
+		FileUtils::cleanupTempDirectory($outside);
+	}
+
+	/**
 	 * Test isSystemFile method.
 	 *
 	 * @since 1.0.0

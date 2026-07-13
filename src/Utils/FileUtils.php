@@ -40,6 +40,11 @@ class FileUtils
 		);
 
 		foreach ($iterator as $file) {
+			// Skip symlinks to prevent following out of the sandbox or entering cycles.
+			if ($file->isLink()) {
+				continue;
+			}
+
 			if ($file->isFile()) {
 				$absolute_path = $file->getPathname();
 				$relative_path = str_replace($dir . DIRECTORY_SEPARATOR, '', $absolute_path);
