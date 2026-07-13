@@ -80,7 +80,7 @@ Or add `~/.composer/vendor/bin` to your PATH.
 
 ### Requirements
 
-- PHP 7.4 or higher
+- PHP 8.3 or higher
 - Composer
 
 ### Setup
@@ -105,4 +105,4 @@ composer test
 
 This project is licensed under the [MIT](http://opensource.org/licenses/MIT).
 
-2025 &copy; [Nilambar Sharma](https://www.nilambar.net).
+2026 &copy; [Nilambar Sharma](https://www.nilambar.net).

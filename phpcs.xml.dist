@@ -24,6 +24,8 @@
 	<!-- Check up to 8 files simultaneously. -->
 	<arg name="parallel" value="8"/>
 
+	<rule ref="NilambarCodingStandard" />
+
 	<!-- Use PSR12 as base standard (includes spacing rules). -->
 	<!-- Note: Our tab indentation rules below will override PSR12's space-based indentation. -->
 	<rule ref="PSR12">
@@ -70,11 +72,7 @@
 	<!-- Scope closing brace spacing. -->
 	<rule ref="Squiz.WhiteSpace.ScopeClosingBrace"/>
 
-	<rule ref="PHPCompatibility">
-		<exclude name="PHPCompatibility.FunctionUse.NewFunctions.str_containsFound"/>
-		<exclude name="PHPCompatibility.FunctionUse.NewFunctions.str_starts_withFound"/>
-		<exclude name="PHPCompatibility.FunctionUse.NewFunctions.str_ends_withFound"/>
-	</rule>
+	<rule ref="PHPCompatibility"/>
 
 	<!-- Disallows grouped use declarations. -->
 	<rule ref="SlevomatCodingStandard.Namespaces.DisallowGroupUse" />
@@ -105,5 +103,5 @@
 
 	<!-- For help understanding the `testVersion` configuration setting:
 		 https://github.com/PHPCompatibility/PHPCompatibility#sniffing-your-code-for-compatibility-with-specific-php-versions -->
-	<config name="testVersion" value="7.4-"/>
+	<config name="testVersion" value="8.3-"/>
 </ruleset>

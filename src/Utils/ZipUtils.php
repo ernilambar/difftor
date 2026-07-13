@@ -103,7 +103,6 @@ class ZipUtils
 
 		$fp = fopen($temp_zip, 'wb');
 		if (false === $fp) {
-			curl_close($ch);
 			unlink($temp_zip);
 			return false;
 		}
@@ -122,7 +121,6 @@ class ZipUtils
 		$success    = curl_exec($ch);
 		$http_code  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		$curl_error = curl_error($ch);
-		curl_close($ch);
 		fclose($fp);
 
 		if (false === $success || ! empty($curl_error)) {

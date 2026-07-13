@@ -16,12 +16,13 @@
     "issues": "https://github.com/ernilambar/difftor/issues"
   },
   "require": {
-    "php": ">=7.4",
-    "jfcherng/php-diff": "^6",
+    "php": ">=8.3",
+    "jfcherng/php-diff": "^7",
     "symfony/console": "^5.4 || ^6.0 || ^7.0"
   },
   "require-dev": {
     "dealerdirect/phpcodesniffer-composer-installer": "^1",
+    "ernilambar/coding-standard": "^2.0",
     "php-parallel-lint/php-parallel-lint": "^1.4",
     "phpcompatibility/php-compatibility": "^10",
     "phpunit/phpunit": "^9.5 || ^10.0",
@@ -44,7 +45,7 @@
       "phpstan/extension-installer": true
     },
     "platform": {
-      "php": "7.4"
+      "php": "8.3"
     },
     "sort-packages": true
   },
