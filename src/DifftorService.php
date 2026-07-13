@@ -174,8 +174,11 @@ class DifftorService
 	 */
 	public function generateDiff($old_source, $new_source, $output_dir = null)
 	{
-		$path1 = PathUtils::normalizePath(trim($old_source));
-		$path2 = PathUtils::normalizePath(trim($new_source));
+		$old_trimmed = trim($old_source);
+		$new_trimmed = trim($new_source);
+
+		$path1 = PathUtils::normalizePath($old_trimmed);
+		$path2 = PathUtils::normalizePath($new_trimmed);
 
 		$result1     = $this->prepareSource($path1);
 		$dir1        = $result1['directory'];
@@ -209,7 +212,8 @@ class DifftorService
 		}
 
 		try {
-			$html_file = $this->generateDiffHtml($dir1, $dir2, $output_dir);
+			$label     = HtmlUtils::buildDiffLabel($old_trimmed, $new_trimmed);
+			$html_file = $this->generateDiffHtml($dir1, $dir2, $output_dir, $label);
 		} finally {
 			if ($is_temp_dir) {
 				FileUtils::cleanupTempDirectory($dir1);
@@ -230,10 +234,11 @@ class DifftorService
 	 * @param string $dir1 First directory path.
 	 * @param string $dir2 Second directory path.
 	 * @param string $cache_dir Cache directory path.
+	 * @param string $label Human-readable diff label for the title / heading.
 	 * @return string HTML file path.
 	 * @throws DifftorException When the output file cannot be written.
 	 */
-	private function generateDiffHtml($dir1, $dir2, $cache_dir)
+	private function generateDiffHtml($dir1, $dir2, $cache_dir, $label)
 	{
 		$files1 = FileUtils::getDirectoryFiles($dir1);
 		$files2 = FileUtils::getDirectoryFiles($dir2);
@@ -245,6 +250,8 @@ class DifftorService
 		$removed_files = [];
 		$html_parts    = [];
 		$diff_files    = []; // Track files with diffs for TOC.
+		$lines_added   = 0;
+		$lines_removed = 0;
 
 		foreach ($all_files as $relative_path) {
 			$file_path1 = $files1[ $relative_path ] ?? null;
@@ -278,9 +285,12 @@ class DifftorService
 					continue; // Skip identical files.
 				}
 
-				$diff_html    = DiffHelper::calculate($content1, $content2, 'Inline');
-				$file_id      = HtmlUtils::generateFileId($relative_path);
-				$diff_files[] = [
+				$diff_html      = DiffHelper::calculate($content1, $content2, 'Inline');
+				$stats          = DiffHelper::getStatistics();
+				$lines_added   += (int) ($stats['inserted'] ?? 0);
+				$lines_removed += (int) ($stats['deleted'] ?? 0);
+				$file_id        = HtmlUtils::generateFileId($relative_path);
+				$diff_files[]   = [
 					'id'       => $file_id,
 					'path'     => $relative_path,
 					'old_path' => $relative_path,
@@ -363,7 +373,10 @@ class DifftorService
 
 						if ($content1 !== $content2) {
 							// File was renamed and has content differences.
-							$diff_html       = DiffHelper::calculate($content1, $content2, 'Inline');
+							$diff_html      = DiffHelper::calculate($content1, $content2, 'Inline');
+							$stats          = DiffHelper::getStatistics();
+							$lines_added   += (int) ($stats['inserted'] ?? 0);
+							$lines_removed += (int) ($stats['deleted'] ?? 0);
 							$renamed_diffs[] = [
 								'old_path'  => $removed_path,
 								'new_path'  => $added_path,
@@ -446,8 +459,16 @@ class DifftorService
 			$summary_parts[] = '</div>';
 		}
 
+		$stats = [
+			'files_modified' => count($diff_files),
+			'files_added'    => count($added_files),
+			'files_removed'  => count($removed_files),
+			'lines_added'    => $lines_added,
+			'lines_removed'  => $lines_removed,
+		];
+
 		// Generate complete HTML document.
-		$html_content = HtmlUtils::buildHtmlDocument($summary_parts, $html_parts, $diff_files);
+		$html_content = HtmlUtils::buildHtmlDocument($summary_parts, $html_parts, $diff_files, $stats, $label);
 
 		// Save HTML file.
 		$html_filename = 'difftor-' . date('Y-m-d-His') . '-' . uniqid() . '.html';

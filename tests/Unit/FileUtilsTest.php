@@ -39,7 +39,7 @@ class FileUtilsTest extends TestCase
 		$this->assertIsArray($files);
 		$this->assertCount(2, $files);
 		$this->assertArrayHasKey('file1.txt', $files);
-		$this->assertArrayHasKey('subdir' . DIRECTORY_SEPARATOR . 'file2.txt', $files);
+		$this->assertArrayHasKey('subdir/file2.txt', $files);
 
 		// Cleanup.
 		FileUtils::cleanupTempDirectory($temp_dir);

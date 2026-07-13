@@ -145,4 +145,59 @@ class HtmlUtilsTest extends TestCase
 		$this->assertStringContainsString('Summary', $html);
 		$this->assertStringContainsString('Content', $html);
 	}
+
+	/**
+	 * Test that buildHtmlDocument interpolates the title label.
+	 *
+	 * @since 2.0.0
+	 */
+	public function testBuildHtmlDocumentUsesTitleLabel()
+	{
+		$html = HtmlUtils::buildHtmlDocument([], [], [], null, 'old.zip → new.zip');
+
+		$this->assertStringContainsString('<title>Difftor: old.zip → new.zip</title>', $html);
+		$this->assertStringContainsString('<h1>old.zip → new.zip</h1>', $html);
+	}
+
+	/**
+	 * Test that buildHtmlDocument renders the stats block when stats are provided.
+	 *
+	 * @since 2.0.0
+	 */
+	public function testBuildHtmlDocumentRendersStats()
+	{
+		$stats = [
+			'files_modified' => 3,
+			'files_added'    => 2,
+			'files_removed'  => 1,
+			'lines_added'    => 42,
+			'lines_removed'  => 7,
+		];
+
+		$html = HtmlUtils::buildHtmlDocument([], [], [], $stats, 'label');
+
+		$this->assertStringContainsString('3 modified', $html);
+		$this->assertStringContainsString('2 added', $html);
+		$this->assertStringContainsString('1 removed', $html);
+		$this->assertStringContainsString('+42', $html);
+		$this->assertStringContainsString('−7', $html);
+	}
+
+	/**
+	 * Test buildDiffLabel with local paths, URLs, and empty inputs.
+	 *
+	 * @since 2.0.0
+	 */
+	public function testBuildDiffLabel()
+	{
+		$this->assertEquals(
+			'old.zip → new.zip',
+			HtmlUtils::buildDiffLabel('/tmp/old.zip', '/tmp/new.zip')
+		);
+		$this->assertEquals(
+			'old-1.0.zip → new-2.0.zip',
+			HtmlUtils::buildDiffLabel('https://example.com/downloads/old-1.0.zip', 'https://example.com/downloads/new-2.0.zip')
+		);
+		$this->assertEquals('Diff Comparison', HtmlUtils::buildDiffLabel('', ''));
+	}
 }
