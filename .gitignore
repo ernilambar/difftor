@@ -41,3 +41,7 @@ Thumbs.db
 /deploy/
 /node_modules/
 /vendor/
+
+# Build artifacts
+/box.json
+/difftor.phar

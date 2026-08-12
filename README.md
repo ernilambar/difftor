@@ -43,6 +43,12 @@ directory (or specified output directory) and can be viewed in a browser.
 	[--porcelain]
 		Output only the file path, suitable for parsing.
 
+	[-h|--help]
+		Display help for the command.
+
+	[-V|--version]
+		Display the application version.
+
 **EXAMPLES**
 
     # Compare two URLs (zip files)
@@ -75,6 +81,23 @@ Then use the `difftor` command:
 ```
 
 Or add `~/.composer/vendor/bin` to your PATH.
+
+### Installing via Phar
+
+Download the latest `difftor.phar` from the [releases page](https://github.com/ernilambar/difftor/releases):
+
+```bash
+curl -fLO https://github.com/ernilambar/difftor/releases/latest/download/difftor.phar
+chmod +x difftor.phar
+sudo mv difftor.phar /usr/local/bin/difftor
+difftor --version
+```
+
+Then use the `difftor` command:
+
+```bash
+difftor <old_source> <new_source>
+```
 
 ## Development
 

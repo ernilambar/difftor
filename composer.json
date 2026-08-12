@@ -17,16 +17,16 @@
   },
   "require": {
     "php": ">=8.3",
-    "jfcherng/php-diff": "^7",
+    "jfcherng/php-diff": "^7.0",
     "symfony/console": "^6.4 || ^7.0"
   },
   "require-dev": {
-    "dealerdirect/phpcodesniffer-composer-installer": "^1",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.2",
     "ernilambar/coding-standard": "^2.0",
     "php-parallel-lint/php-parallel-lint": "^1.4",
-    "phpcompatibility/php-compatibility": "^10",
+    "phpcompatibility/php-compatibility": "^10.0",
     "phpunit/phpunit": "^9.5 || ^10.0",
-    "slevomat/coding-standard": "^8"
+    "slevomat/coding-standard": "^8.30"
   },
   "minimum-stability": "dev",
   "prefer-stable": true,

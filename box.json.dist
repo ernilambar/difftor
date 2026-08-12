@@ -1,0 +1,23 @@
+{
+  "main": "bin/difftor",
+  "output": "difftor.phar",
+  "directories": [
+    "src"
+  ],
+  "files": [
+    "composer.json"
+  ],
+  "finder": [
+    {
+      "in": "vendor",
+      "exclude": [
+        "tests",
+        "test",
+        "docs"
+      ]
+    }
+  ],
+  "compression": "GZ",
+  "chmod": "0755",
+  "intercept": true
+}
