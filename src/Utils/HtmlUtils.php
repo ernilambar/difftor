@@ -9,6 +9,7 @@
 namespace Nilambar\Difftor\Utils;
 
 use Jfcherng\Diff\DiffHelper;
+use ReflectionClass;
 
 /**
  * HtmlUtils Class.
@@ -180,7 +181,10 @@ class HtmlUtils
 	public static function buildHtmlDocument($summary_parts, $html_parts, $diff_files = [], $stats = null, $title_label = null)
 	{
 		// Get default CSS from php-diff package.
-		$diff_css = DiffHelper::getStyleSheet();
+		// Not using DiffHelper::getStyleSheet() as it relies on realpath(),
+		// which fails to resolve phar:// stream paths when run from a phar build.
+		$diff_css_path = dirname((new ReflectionClass(DiffHelper::class))->getFileName()) . '/../example/diff-table.css';
+		$diff_css      = file_get_contents($diff_css_path);
 
 		$label       = (null === $title_label || '' === trim((string) $title_label)) ? 'Diff Comparison' : (string) $title_label;
 		$title_html  = htmlspecialchars('Difftor: ' . $label, ENT_QUOTES, 'UTF-8');

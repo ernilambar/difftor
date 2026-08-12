@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  build-phar:
+    name: Build and publish phar
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          tools: composer, box
+          php-version: '8.3'
+
+      - name: Install PHP dependencies
+        uses: ramsey/composer-install@v3
+        with:
+          composer-options: '--no-dev --optimize-autoloader --prefer-dist --no-interaction'
+
+      - name: Build phar
+        run: box compile
+
+      - name: Publish release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          body: 'Difftor ${{ github.ref_name }}'
+          files: difftor.phar
