@@ -1,18 +1,27 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Overview
+
+Difftor is a PHP CLI tool that compares two sources (URLs, directories, or zip files) and generates an HTML diff file. Built with PHP 8.3+, Symfony Console, and jfcherng/php-diff.
+
+## Setup
+
+```bash
+composer install
+```
 
 ## Commands
 
 ```bash
 composer install      # Install dependencies
-composer phpunit      # Run unit tests
-composer test         # lint + phpunit
-composer format       # Auto-fix PHPCS violations
-composer lint         # php-lint + phpcs
+composer phpunit      # Run PHPUnit tests
+composer lint         # Run PHP lint + PHPCS
+composer format       # Auto-fix PHPCS violations with PHPCBF
+composer test         # Run lint + phpunit
 ```
 
 Run a single test file:
+
 ```bash
 vendor/bin/phpunit tests/Unit/FileUtilsTest.php
 ```
@@ -39,11 +48,21 @@ DifftorCommand (Console)
 - Temp directories created for URL downloads and zip extractions are cleaned up after diff generation.
 - Output is a single self-contained HTML file saved to system temp dir (or `--output-dir`).
 
-## Quality gate
+## Conventions
 
-**All gates MUST pass before any task is marked complete. No exceptions.**
+- **Tab indentation** for PHP files (not spaces). Configure your editor accordingly.
+- **PHP 8.3+ compatibility** — code must run on PHP 8.3 and later.
+- **PSR-12** coding standard with custom modifications (see `phpcs.xml.dist`).
+- **Short array syntax** only (`[]` not `array()`).
+- **Alphabetically sorted use statements** — no grouped use declarations.
+- **PSR-4 autoloading** — namespace `Nilambar\Difftor\` maps to `src/`.
 
-- `composer format` — auto-fixes PHPCS violations (must run before lint)
-- `composer lint` — must exit with zero errors; fix all errors and re-run until clean
+## Quality Gate
 
-If a step fails: fix the issue, then re-run from that step.
+All gates MUST pass (exit code 0) before declaring a task complete:
+
+1. `composer format` — auto-fix code style violations
+2. `composer lint` — verify no lint or PHPCS errors remain
+3. `composer phpunit` — verify all tests pass
+
+If any step fails, fix the issue and re-run from that step.
